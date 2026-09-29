@@ -11,9 +11,10 @@ import { TTSStudio } from './components/TTSStudio';
 import { LahorePhrases } from './components/LahorePhrases';
 import { LahoreTour } from './components/LahoreTour';
 import { TravelAssistant } from './components/TravelAssistant';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'phrases' | 'tour' | 'guide'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'phrases' | 'tour' | 'guide' | 'privacy'>('home');
 
   return (
     <div className="min-h-screen bg-[#07040F] text-[#F1F0F5] flex flex-col items-center justify-start antialiased selection:bg-purple-600 selection:text-white relative overflow-x-hidden pt-3 sm:pt-4">
@@ -78,7 +79,20 @@ export default function App() {
           {activeTab === 'phrases' && <LahorePhrases />}
           {activeTab === 'tour' && <LahoreTour />}
           {activeTab === 'guide' && <TravelAssistant />}
+          {activeTab === 'privacy' && <PrivacyPolicy onBack={() => setActiveTab('home')} />}
         </main>
+
+        {activeTab !== 'privacy' && (
+          <footer className="w-full pb-24 pt-5 text-center">
+            <button
+              type="button"
+              onClick={() => setActiveTab('privacy')}
+              className="text-xs text-purple-300/60 underline decoration-purple-500/40 underline-offset-4 transition-colors hover:text-emerald-200"
+            >
+              Privacy Policy
+            </button>
+          </footer>
+        )}
 
         {/* Fixed Bottom Navigation Bar matching Mockup */}
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0716]/95 backdrop-blur-xl border-t border-purple-900/30 py-2.5 px-6">
