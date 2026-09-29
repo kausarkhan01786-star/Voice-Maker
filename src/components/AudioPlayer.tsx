@@ -13,6 +13,7 @@ import {
 
 interface AudioPlayerProps {
   audioBase64: string | null;
+  audioUrl?: string | null;
   mimeType?: string;
   title?: string;
   voiceName?: string;
@@ -21,6 +22,7 @@ interface AudioPlayerProps {
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   audioBase64,
+  audioUrl = null,
   mimeType = 'audio/wav',
   title = 'Your audio will appear here',
   voiceName,
@@ -33,16 +35,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [shared, setShared] = useState(false);
+  const hasAudio = Boolean(audioUrl || audioBase64);
 
   useEffect(() => {
-    if (!audioBase64) return;
+    if (!hasAudio) return;
 
     if (audioRef.current) {
       audioRef.current.pause();
     }
 
-    const audioUrl = `data:${mimeType};base64,${audioBase64}`;
-    const audio = new Audio(audioUrl);
+    const sourceUrl = audioUrl || `data:${mimeType};base64,${audioBase64}`;
+    const audio = new Audio(sourceUrl);
     audioRef.current = audio;
     audio.playbackRate = playbackRate;
 
@@ -72,7 +75,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return () => {
       audio.pause();
     };
-  }, [audioBase64, mimeType]);
+  }, [audioBase64, audioUrl, hasAudio, mimeType]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -103,10 +106,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const downloadWav = () => {
-    if (!audioBase64) return;
+    if (!hasAudio) return;
     const a = document.createElement('a');
-    a.href = `data:${mimeType};base64,${audioBase64}`;
-    a.download = `voicemack-audio-${Date.now()}.wav`;
+    a.href = audioUrl || `data:${mimeType};base64,${audioBase64}`;
+    const extension = mimeType.includes('mp3') || mimeType.includes('mpeg') ? 'mp3' : 'wav';
+    a.download = `voicemack-audio-${Date.now()}.${extension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -135,10 +139,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         {/* Circular Play / Pause Button matching Mockup */}
         <button
           onClick={togglePlay}
-          disabled={!audioBase64}
+          disabled={!hasAudio}
           title={isPlaying ? 'Pause' : 'Play'}
           className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 shadow-lg shadow-purple-600/30 ${
-            audioBase64
+            hasAudio
               ? 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white'
               : 'bg-purple-900/40 text-purple-300/50 cursor-not-allowed'
           }`}
@@ -173,7 +177,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 step={0.05}
                 value={currentTime}
                 onChange={handleSeek}
-                disabled={!audioBase64}
+                disabled={!hasAudio}
                 className="w-full h-1.5 bg-[#251547] rounded-lg appearance-none cursor-pointer accent-[#A855F7] focus:outline-none"
               />
             </div>
@@ -211,7 +215,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       </div>
 
       {/* Speed Chips row when audio is loaded */}
-      {audioBase64 && (
+          {hasAudio && (
         <div className="mt-2.5 pt-2 border-t border-purple-900/30 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-purple-400/80">Speed:</span>

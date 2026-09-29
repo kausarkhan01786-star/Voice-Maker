@@ -11,11 +11,15 @@ import {
   Keyboard,
   Clock,
   Radio,
+  Music2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { VOICE_PROFILES, STYLE_PRESETS, QUICK_PROMPTS } from '../data/lahoreData';
 import microphoneImage from '../assets/images/microphone_glow_violet_1790654219590.jpg';
 import { AudioPlayer } from './AudioPlayer';
 import { postJson } from '../utils/api';
+import { base64AudioToBlob, mixSpeechWithMusic } from '../utils/audioMix';
 import {
   getCachedAudio,
   setCachedAudio,
@@ -25,6 +29,13 @@ import {
 interface TTSStudioProps {
   initialText?: string;
   onNavigateToHistory?: () => void;
+}
+
+interface BackgroundTrack {
+  blob: Blob;
+  name: string;
+  mimeType: string;
+  url: string;
 }
 
 export const TTSStudio: React.FC<TTSStudioProps> = ({
@@ -45,6 +56,14 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
   const [quotaCountdown, setQuotaCountdown] = useState<number | null>(null);
   const [isBrowserSpeaking, setIsBrowserSpeaking] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [musicMode, setMusicMode] = useState<'ai' | 'upload'>('ai');
+  const [musicPrompt, setMusicPrompt] = useState('Soft cinematic piano and warm ambient strings, calm and unobtrusive');
+  const [musicVolume, setMusicVolume] = useState(18);
+  const [backgroundTrack, setBackgroundTrack] = useState<BackgroundTrack | null>(null);
+  const [mixedAudioUrl, setMixedAudioUrl] = useState<string | null>(null);
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [isMixingAudio, setIsMixingAudio] = useState(false);
+  const [musicError, setMusicError] = useState<string | null>(null);
 
   // Timer effect for rate-limit cooldown
   useEffect(() => {
@@ -54,6 +73,44 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     }, 1000);
     return () => clearInterval(interval);
   }, [quotaCountdown]);
+
+  useEffect(() => {
+    if (!backgroundTrack) return;
+    return () => URL.revokeObjectURL(backgroundTrack.url);
+  }, [backgroundTrack]);
+
+  useEffect(() => {
+    if (!mixedAudioUrl) return;
+    return () => URL.revokeObjectURL(mixedAudioUrl);
+  }, [mixedAudioUrl]);
+
+  useEffect(() => {
+    if (!currentAudio || !backgroundTrack) {
+      setMixedAudioUrl(null);
+      setIsMixingAudio(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsMixingAudio(true);
+    mixSpeechWithMusic(currentAudio.base64, backgroundTrack.blob, musicVolume / 100)
+      .then((mixedBlob) => {
+        if (!cancelled) setMixedAudioUrl(URL.createObjectURL(mixedBlob));
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setMixedAudioUrl(null);
+          setMusicError(error instanceof Error ? error.message : 'Could not mix this audio track.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsMixingAudio(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentAudio?.base64, backgroundTrack, musicVolume]);
 
   const activeStyleObj =
     STYLE_PRESETS.find((s) => s.id === selectedStyle) || STYLE_PRESETS[0];
@@ -134,6 +191,45 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
   const insertBackchannel = (token: string) => {
     setInputText((prev) => `${prev} ${token} `);
+  };
+
+  const selectBackgroundTrack = (blob: Blob, name: string, mimeType: string) => {
+    setBackgroundTrack({ blob, name, mimeType, url: URL.createObjectURL(blob) });
+    setMusicError(null);
+  };
+
+  const handleMusicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('audio/')) {
+      setMusicError('Choose an audio file such as MP3, WAV, M4A, or OGG.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setMusicError('Audio files must be 20 MB or smaller.');
+      return;
+    }
+    selectBackgroundTrack(file, file.name, file.type);
+  };
+
+  const handleGenerateMusic = async () => {
+    if (!musicPrompt.trim()) return;
+    setIsGeneratingMusic(true);
+    setMusicError(null);
+    try {
+      const { response, data } = await postJson('/api/music', { prompt: musicPrompt.trim() });
+      if (!response.ok) throw new Error(data.error || 'Music generation failed.');
+      selectBackgroundTrack(
+        base64AudioToBlob(data.audioBase64, data.mimeType || 'audio/mp3'),
+        'AI background music',
+        data.mimeType || 'audio/mp3'
+      );
+    } catch (error: any) {
+      setMusicError(error.message || 'Could not generate background music.');
+    } finally {
+      setIsGeneratingMusic(false);
+    }
   };
 
   return (
@@ -373,6 +469,106 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
         </div>
       </div>
 
+      <section className="space-y-3 rounded-2xl border border-[#2B1A52] bg-[#120B27] p-4 shadow-md" aria-labelledby="background-music-heading">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-white">
+            <Music2 className="h-4 w-4 text-emerald-300" />
+            <h2 id="background-music-heading">Background Music</h2>
+          </div>
+          {backgroundTrack && (
+            <button
+              type="button"
+              onClick={() => setBackgroundTrack(null)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-purple-300 hover:bg-purple-900/40 hover:text-white"
+              title="Remove background music"
+              aria-label="Remove background music"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 rounded-xl border border-[#392269] bg-[#0D081C] p-1" role="group" aria-label="Background music source">
+          <button
+            type="button"
+            onClick={() => setMusicMode('ai')}
+            aria-pressed={musicMode === 'ai'}
+            className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-2 text-xs font-semibold transition-colors ${musicMode === 'ai' ? 'bg-[#35205E] text-white' : 'text-purple-300/70 hover:text-white'}`}
+          >
+            <Sparkles className="h-3.5 w-3.5" /> AI music
+          </button>
+          <button
+            type="button"
+            onClick={() => setMusicMode('upload')}
+            aria-pressed={musicMode === 'upload'}
+            className={`flex min-h-10 items-center justify-center gap-2 rounded-lg px-2 text-xs font-semibold transition-colors ${musicMode === 'upload' ? 'bg-[#35205E] text-white' : 'text-purple-300/70 hover:text-white'}`}
+          >
+            <Upload className="h-3.5 w-3.5" /> Upload audio
+          </button>
+        </div>
+
+        {musicMode === 'ai' ? (
+          <div className="space-y-2.5">
+            <label htmlFor="music-prompt" className="text-xs font-medium text-purple-200">Describe the instrumental</label>
+            <textarea
+              id="music-prompt"
+              value={musicPrompt}
+              onChange={(event) => setMusicPrompt(event.target.value.slice(0, 500))}
+              maxLength={500}
+              rows={2}
+              placeholder="e.g. Gentle piano and soft strings, calm mood"
+              className="w-full resize-y rounded-xl border border-[#392269] bg-[#0D081C] px-3 py-2.5 text-sm text-white outline-none placeholder:text-purple-300/40 focus:border-emerald-400/70"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] text-purple-300/60">Lyria generates a 30-second instrumental clip.</span>
+              <button
+                type="button"
+                onClick={handleGenerateMusic}
+                disabled={isGeneratingMusic || !musicPrompt.trim()}
+                className="flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-emerald-400 px-3 text-xs font-bold text-[#07120E] transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGeneratingMusic ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {isGeneratingMusic ? 'Creating...' : 'Generate'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-purple-500/50 bg-[#0D081C] px-3 text-sm font-semibold text-purple-100 transition-colors hover:border-emerald-300/70 hover:bg-[#17102A]">
+            <Upload className="h-4 w-4 text-emerald-300" />
+            {backgroundTrack ? 'Choose a different audio file' : 'Choose audio file'}
+            <input type="file" accept="audio/*" onChange={handleMusicUpload} className="sr-only" />
+          </label>
+        )}
+
+        {backgroundTrack && (
+          <div className="space-y-2 rounded-xl border border-[#392269] bg-[#0D081C] p-3">
+            <div className="truncate text-xs font-medium text-white" title={backgroundTrack.name}>{backgroundTrack.name}</div>
+            <audio controls preload="metadata" src={backgroundTrack.url} className="h-9 w-full" />
+          </div>
+        )}
+
+        <label className="block space-y-1.5" htmlFor="music-volume">
+          <span className="flex items-center justify-between text-xs text-purple-200">
+            <span>Music level</span>
+            <span className="font-mono text-emerald-200">{musicVolume}%</span>
+          </span>
+          <input
+            id="music-volume"
+            type="range"
+            min="0"
+            max="40"
+            step="1"
+            value={musicVolume}
+            onChange={(event) => setMusicVolume(Number(event.target.value))}
+            disabled={!backgroundTrack}
+            className="h-2 w-full cursor-pointer accent-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        </label>
+
+        {isMixingAudio && <p className="text-xs text-emerald-200">Mixing music with your generated voice...</p>}
+        {musicError && <p role="alert" className="text-xs text-rose-300">{musicError}</p>}
+      </section>
+
       {/* Quota Exceeded / Rate Limit Alert with Live Countdown */}
       {quotaCountdown !== null && quotaCountdown > 0 && (
         <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-600/50 text-amber-200 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
@@ -450,7 +646,8 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
       {/* Bottom Audio Player Bar matching mockup */}
       <AudioPlayer
-        audioBase64={currentAudio?.base64 || null}
+        audioBase64={mixedAudioUrl ? null : currentAudio?.base64 || null}
+        audioUrl={mixedAudioUrl}
         title={
           currentAudio
             ? currentAudio.text

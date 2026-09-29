@@ -218,6 +218,41 @@ Provide an articulate, helpful, and concise response in English (under 150 words
   }
 });
 
+app.post('/api/music', async (req, res) => {
+  if (!ai) {
+    return res.status(503).json({ error: 'Gemini API is not configured. Set GEMINI_API_KEY in a local .env file.' });
+  }
+
+  try {
+    const { prompt } = req.body;
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: 'Describe the background music you want.' });
+    }
+    if (prompt.length > 500) {
+      return res.status(400).json({ error: 'Keep the music description under 500 characters.' });
+    }
+
+    const interaction = await ai.interactions.create({
+      model: 'lyria-3-clip-preview',
+      input: `Create a 30-second instrumental background music clip for narration. No vocals, lyrics, or sound effects. Keep the arrangement unobtrusive and loop-friendly. Direction: ${prompt.trim()}`,
+      response_format: { type: 'audio' },
+    });
+    const audio = interaction.output_audio;
+    if (!audio?.data) {
+      return res.status(502).json({ error: 'The music model did not return an audio clip.' });
+    }
+
+    res.json({
+      audioBase64: audio.data,
+      mimeType: audio.mime_type || 'audio/mp3',
+      title: interaction.output_text || 'AI background music',
+    });
+  } catch (error: any) {
+    console.error('Error generating background music:', error);
+    res.status(500).json({ error: error?.message || 'Failed to generate background music.' });
+  }
+});
+
 // Vite middleware mounting in development or static hosting in production
 const isProduction = process.env.NODE_ENV === 'production';
 
