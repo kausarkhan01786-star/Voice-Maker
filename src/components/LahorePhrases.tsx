@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { LAHORE_PHRASES, SpokenPhrase } from '../data/lahoreData';
 import { AudioPlayer } from './AudioPlayer';
+import { postJson } from '../utils/api';
 import {
   getCachedAudio,
   setCachedAudio,
@@ -69,17 +70,11 @@ export const LahorePhrases: React.FC = () => {
 
     setLoadingId(phrase.id);
     try {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { response, data } = await postJson('/api/tts', {
           text: phrase.english,
           voice: phrase.recommendedVoice,
           style: 'Warm, natural, clear and articulate voice delivery',
-        }),
       });
-
-      const data = await response.json();
       if (!response.ok) {
         if (response.status === 429 || data.isQuotaExceeded) {
           setFallbackSpeakingId(phrase.id);

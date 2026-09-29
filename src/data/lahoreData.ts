@@ -1,3 +1,9 @@
+import avatarFemaleKore from '../assets/images/avatar_female_kore_1790654233509.jpg';
+import avatarMalePuck from '../assets/images/avatar_male_puck_1790654245147.jpg';
+import avatarFemaleZephyr from '../assets/images/avatar_female_zephyr_1790654257178.jpg';
+import avatarMaleFenrir from '../assets/images/avatar_male_fenrir_1790654270382.jpg';
+import avatarMaleCharon from '../assets/images/avatar_male_charon_1790654285051.jpg';
+
 export interface SpokenPhrase {
   id: string;
   category: 'greetings' | 'business' | 'creative' | 'casual' | 'announcements' | 'support';
@@ -27,7 +33,7 @@ export const VOICE_PROFILES = [
     gender: 'Female',
     description: 'Warm, calm and soothing voice — ideal for natural guides and narrations',
     tag: 'Popular',
-    avatar: '/src/assets/images/avatar_female_kore_1790654233509.jpg',
+    avatar: avatarFemaleKore,
   },
   {
     id: 'Puck',
@@ -37,7 +43,7 @@ export const VOICE_PROFILES = [
     gender: 'Male',
     description: 'Vibrant, energetic and cheerful — great for podcasts, games and dynamic audio',
     tag: 'Energetic',
-    avatar: '/src/assets/images/avatar_male_puck_1790654245147.jpg',
+    avatar: avatarMalePuck,
   },
   {
     id: 'Zephyr',
@@ -47,7 +53,7 @@ export const VOICE_PROFILES = [
     gender: 'Neutral',
     description: 'Crisp, modern and articulate — optimal for announcements, tutorials and UI prompts',
     tag: 'Straightforward',
-    avatar: '/src/assets/images/avatar_female_zephyr_1790654257178.jpg',
+    avatar: avatarFemaleZephyr,
   },
   {
     id: 'Fenrir',
@@ -57,7 +63,7 @@ export const VOICE_PROFILES = [
     gender: 'Male',
     description: 'Deep, resonant and authoritative — perfect for documentaries and dramatic trailers',
     tag: 'Serious',
-    avatar: '/src/assets/images/avatar_male_fenrir_1790654270382.jpg',
+    avatar: avatarMaleFenrir,
   },
   {
     id: 'Charon',
@@ -67,7 +73,7 @@ export const VOICE_PROFILES = [
     gender: 'Male',
     description: 'Reflective, steady and cinematic — captivating for audiobooks and historical stories',
     tag: 'Narrative',
-    avatar: '/src/assets/images/avatar_male_charon_1790654285051.jpg',
+    avatar: avatarMaleCharon,
   },
 ];
 

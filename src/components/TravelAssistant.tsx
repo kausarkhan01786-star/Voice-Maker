@@ -9,6 +9,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { AudioPlayer } from './AudioPlayer';
+import { postJson } from '../utils/api';
 
 export const TravelAssistant: React.FC = () => {
   const [question, setQuestion] = useState('');
@@ -36,13 +37,9 @@ export const TravelAssistant: React.FC = () => {
     setActiveAudio(null);
 
     try {
-      const res = await fetch('/api/guide-ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: queryToAsk.trim() }),
+      const { response: res, data } = await postJson('/api/guide-ask', {
+        question: queryToAsk.trim(),
       });
-
-      const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to get answer');
 
       setResponseAnswer(data.answer);
@@ -61,17 +58,11 @@ export const TravelAssistant: React.FC = () => {
     setIsSpeaking(true);
     try {
       const textToSpeak = responseAnswer.slice(0, 400);
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { response: res, data } = await postJson('/api/tts', {
           text: textToSpeak,
           voice: 'Kore',
           style: 'Warm, clear, intelligent and friendly assistant voice',
-        }),
       });
-
-      const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'TTS error');
 
       if (data.audioBase64) {

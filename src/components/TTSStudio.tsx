@@ -13,7 +13,9 @@ import {
   Radio,
 } from 'lucide-react';
 import { VOICE_PROFILES, STYLE_PRESETS, QUICK_PROMPTS } from '../data/lahoreData';
+import microphoneImage from '../assets/images/microphone_glow_violet_1790654219590.jpg';
 import { AudioPlayer } from './AudioPlayer';
+import { postJson } from '../utils/api';
 import {
   getCachedAudio,
   setCachedAudio,
@@ -83,17 +85,11 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     setIsGenerating(true);
 
     try {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { response, data } = await postJson('/api/tts', {
           text: textToSpeak.trim(),
           voice: voiceToUse,
           style: activeStyleObj.value,
-        }),
       });
-
-      const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 429 || data.isQuotaExceeded) {
@@ -191,7 +187,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
         <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center">
           <div className="absolute inset-0 bg-purple-600/25 rounded-full blur-2xl pointer-events-none" />
           <img
-            src="/src/assets/images/microphone_glow_violet_1790654219590.jpg"
+            src={microphoneImage}
             alt="3D Glowing Retro Microphone"
             className="w-full h-full object-contain relative z-10 drop-shadow-[0_10px_20px_rgba(168,85,247,0.4)] rounded-2xl"
           />
