@@ -1,0 +1,6 @@
+{
+  "name": "Lahore Safar - লাহোর অডিও গাইড ও TTS",
+  "description": "লাহোর সফরসঙ্গী: Gemini 3.8 Flash TTS প্রযুক্তিতে যেকোনো টেক্সটকে মিষ্টি কণ্ঠে অডিও রূপান্তর, ভ্রমণ নির্দেশিকা ও জরুরি উর্দু-বাংলা কথা।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
