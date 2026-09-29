@@ -107,13 +107,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   const downloadWav = () => {
     if (!hasAudio) return;
-    const a = document.createElement('a');
-    a.href = audioUrl || `data:${mimeType};base64,${audioBase64}`;
+    const link = document.createElement('a');
     const extension = mimeType.includes('mp3') || mimeType.includes('mpeg') ? 'mp3' : 'wav';
-    a.download = `voicemack-audio-${Date.now()}.${extension}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    link.href = audioUrl || `data:${mimeType};base64,${audioBase64}`;
+    link.download = `voicemack-audio-${Date.now()}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   const handleShare = () => {
@@ -158,7 +158,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <p className="text-xs sm:text-sm font-medium text-stone-200 truncate">
-              {audioBase64 ? title : 'Your audio will appear here'}
+              {hasAudio ? title : 'Your audio will appear here'}
             </p>
             {voiceName && (
               <span className="hidden sm:inline-block text-[11px] text-purple-300/80 font-mono">
@@ -193,7 +193,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={downloadWav}
-            disabled={!audioBase64}
+            disabled={!hasAudio}
             title="Download WAV"
             className="p-2 sm:p-2.5 rounded-xl text-purple-300 hover:text-white hover:bg-purple-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >

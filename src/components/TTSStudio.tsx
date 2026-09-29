@@ -646,7 +646,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
       {/* Bottom Audio Player Bar matching mockup */}
       <AudioPlayer
-        audioBase64={mixedAudioUrl ? null : currentAudio?.base64 || null}
+        audioBase64={backgroundTrack ? null : currentAudio?.base64 || null}
         audioUrl={mixedAudioUrl}
         title={
           currentAudio
