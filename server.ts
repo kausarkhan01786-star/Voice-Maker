@@ -15,20 +15,26 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json({ limit: '10mb' }));
 
 // Initializing the server-side Gemini SDK instance with mandatory User-Agent
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
-});
+const ai = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    })
+  : null;
 
 // In-memory cache to conserve API quota and provide instant replay
 const ttsAudioCache = new Map<string, { audioBase64: string; mimeType: string; voice: string }>();
 
 // Primary TTS endpoint powered by gemini-3.8-flash-tts with automatic fallback & caching
 app.post('/api/tts', async (req, res) => {
+  if (!ai) {
+    return res.status(503).json({ error: 'Gemini API is not configured. Set GEMINI_API_KEY in a local .env file.' });
+  }
+
   try {
     const {
       text,
@@ -176,6 +182,10 @@ app.post('/api/tts', async (req, res) => {
 
 // AI Voice & Speech Assistant endpoint powered by gemini-3.8-flash
 app.post('/api/guide-ask', async (req, res) => {
+  if (!ai) {
+    return res.status(503).json({ error: 'Gemini API is not configured. Set GEMINI_API_KEY in a local .env file.' });
+  }
+
   try {
     const { question, userContext = 'A user exploring voice synthesis, voiceovers, podcasts, and speech generation' } = req.body;
 
