@@ -26,3 +26,9 @@
   to = "/.netlify/functions/audio-to-video"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/replicate-voice"
+  to = "/.netlify/functions/replicate-voice"
+  status = 200
+  force = true

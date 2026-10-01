@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { handler as audioToVideoHandler } from './netlify/functions/audio-to-video';
+import { handler as replicateVoiceHandler } from './netlify/functions/replicate-voice';
 
 dotenv.config();
 
@@ -256,6 +257,14 @@ app.post('/api/music', async (req, res) => {
 
 app.post('/api/audio-to-video', async (req, res) => {
   const result = await audioToVideoHandler({
+    httpMethod: req.method,
+    body: JSON.stringify(req.body),
+  });
+  res.status(result.statusCode).set(result.headers).send(result.body);
+});
+
+app.post('/api/replicate-voice', async (req, res) => {
+  const result = await replicateVoiceHandler({
     httpMethod: req.method,
     body: JSON.stringify(req.body),
   });

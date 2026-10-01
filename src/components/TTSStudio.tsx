@@ -18,9 +18,16 @@ import {
 import { VOICE_PROFILES, STYLE_PRESETS, QUICK_PROMPTS } from '../data/lahoreData';
 import microphoneImage from '../assets/images/microphone_glow_violet_1790654219590.jpg';
 import { AudioPlayer } from './AudioPlayer';
+import { VoiceReplicationPanel } from './VoiceReplicationPanel';
 import { postJson } from '../utils/api';
 import { audioBlobToBase64, base64AudioToBlob, mixSpeechWithMusic } from '../utils/audioMix';
 import type { GeneratedAudioHistoryItem } from '../utils/audioHistory';
+import {
+  deleteReplicatedVoiceProfile,
+  getReplicatedVoiceProfiles,
+  saveReplicatedVoiceProfile,
+  type ReplicatedVoiceProfile,
+} from '../utils/voiceProfiles';
 import {
   getCachedAudio,
   setCachedAudio,
@@ -47,6 +54,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 }) => {
   const [inputText, setInputText] = useState(initialText);
   const [selectedVoice, setSelectedVoice] = useState('Kore');
+  const [replicatedVoices, setReplicatedVoices] = useState<ReplicatedVoiceProfile[]>([]);
   const [selectedStyle, setSelectedStyle] = useState('warm');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<{
@@ -78,6 +86,12 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     }, 1000);
     return () => clearInterval(interval);
   }, [quotaCountdown]);
+
+  useEffect(() => {
+    getReplicatedVoiceProfiles().then(setReplicatedVoices).catch((error: unknown) => {
+      console.error('Could not load replicated voice profiles:', error);
+    });
+  }, []);
 
   useEffect(() => {
     if (!backgroundTrack) return;
@@ -145,6 +159,17 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
   const activeStyleObj =
     STYLE_PRESETS.find((s) => s.id === selectedStyle) || STYLE_PRESETS[0];
+  const handleReplicatedVoiceCreated = async (profile: ReplicatedVoiceProfile) => {
+    await saveReplicatedVoiceProfile(profile);
+    setReplicatedVoices((profiles) => [profile, ...profiles.filter((item) => item.key !== profile.key)]);
+    setSelectedVoice(profile.key);
+  };
+
+  const handleReplicatedVoiceDelete = async (key: string) => {
+    await deleteReplicatedVoiceProfile(key);
+    setReplicatedVoices((profiles) => profiles.filter((profile) => profile.key !== key));
+    if (selectedVoice === key) setSelectedVoice('Kore');
+  };
 
   const handleGenerateTTS = async (
     textToSpeak = inputText,
@@ -156,6 +181,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     }
 
     setErrorMsg(null);
+    const voiceLabel = replicatedVoices.find((profile) => profile.key === voiceToUse)?.name || voiceToUse;
 
     // Check client-side cache first
     const cacheKey = `${voiceToUse}::${textToSpeak.trim()}::${activeStyleObj.value}`;
@@ -166,7 +192,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
       const historyItem: GeneratedAudioHistoryItem = {
         id,
         text: textToSpeak.trim(),
-        voice: voiceToUse,
+        voice: voiceLabel,
         base64: cachedBase64,
         mimeType: 'audio/wav',
         createdAt,
@@ -175,7 +201,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
         id,
         base64: cachedBase64,
         text: textToSpeak.trim(),
-        voice: voiceToUse,
+        voice: voiceLabel,
         createdAt,
         modelUsed: 'gemini-3.8-flash-tts (cached)',
       });
@@ -187,9 +213,9 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
     try {
       const { response, data } = await postJson('/api/tts', {
-          text: textToSpeak.trim(),
-          voice: voiceToUse,
-          style: activeStyleObj.value,
+        text: textToSpeak.trim(),
+        voice: voiceToUse,
+        style: activeStyleObj.value,
       });
 
       if (!response.ok) {
@@ -213,7 +239,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
           id,
           base64: data.audioBase64,
           text: textToSpeak.trim(),
-          voice: voiceToUse,
+          voice: voiceLabel,
           createdAt,
           modelUsed: data.modelUsed || 'gemini-3.8-flash-tts',
         };
@@ -480,6 +506,14 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
           })}
         </div>
       </div>
+
+      <VoiceReplicationPanel
+        profiles={replicatedVoices}
+        selectedVoice={selectedVoice}
+        onSelect={setSelectedVoice}
+        onCreated={handleReplicatedVoiceCreated}
+        onDelete={handleReplicatedVoiceDelete}
+      />
 
       {/* Voice Style Presets Section (2x2 Grid) matching mockup */}
       <div className="space-y-2.5">

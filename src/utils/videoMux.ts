@@ -90,3 +90,49 @@ export async function compressAudioForAnalysis(audio: File): Promise<File> {
     ));
   }
 }
+
+export async function normalizeVoiceRecording(
+  audio: File,
+  minimumSeconds: number,
+  maximumSeconds: number
+): Promise<File> {
+  const decoder = new AudioContext();
+  let duration: number;
+  try {
+    const decoded = await decoder.decodeAudioData(await audio.arrayBuffer());
+    duration = decoded.duration;
+  } finally {
+    await decoder.close();
+  }
+
+  if (duration < minimumSeconds || duration > maximumSeconds) {
+    throw new Error(`Recording must be ${minimumSeconds}-${maximumSeconds} seconds long.`);
+  }
+
+  const engine = await getFFmpeg();
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const audioExtension = audio.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'audio';
+  const inputName = `voice-input-${suffix}.${audioExtension}`;
+  const outputName = `voice-normalized-${suffix}.wav`;
+
+  try {
+    await engine.writeFile(inputName, await fetchFile(audio));
+    await engine.exec([
+      '-i', inputName,
+      '-vn',
+      '-ac', '1',
+      '-ar', '24000',
+      '-c:a', 'pcm_s16le',
+      '-f', 'wav',
+      outputName,
+    ]);
+    const result = await engine.readFile(outputName);
+    if (typeof result === 'string') throw new Error('Could not prepare the voice recording.');
+    const outputBuffer = result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength) as ArrayBuffer;
+    return new File([outputBuffer], outputName, { type: 'audio/wav' });
+  } finally {
+    await Promise.all([inputName, outputName].map((path) =>
+      engine.deleteFile(path).catch(() => undefined)
+    ));
+  }
+}
