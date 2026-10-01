@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AudioLines, Download, Film, Loader2, Sparkles, Upload, Video } from 'lucide-react';
+import { AudioLines, Clock3, Download, Film, Loader2, Sparkles, Trash2, Upload, Video } from 'lucide-react';
 import type { GeneratedAudioHistoryItem } from '../utils/audioHistory';
+import {
+  clearVideoHistory,
+  getVideoHistory,
+  saveVideoHistoryItem,
+  type GeneratedVideoHistoryItem,
+} from '../utils/videoHistory';
 import { muxAudioIntoVideo } from '../utils/videoMux';
 import { postJson } from '../utils/api';
 
@@ -9,6 +15,43 @@ interface AudioToVideoProps {
 }
 
 type ConversionStage = 'analysis' | 'video';
+
+const VideoHistoryItem: React.FC<{ item: GeneratedVideoHistoryItem }> = ({ item }) => {
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(item.video);
+    setVideoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [item.video]);
+
+  return (
+    <article className="space-y-2 border-b border-purple-900/30 pb-4">
+      <video
+        controls
+        playsInline
+        src={videoUrl || undefined}
+        className="max-h-[420px] w-full rounded-lg bg-black"
+        style={{ aspectRatio: item.aspectRatio }}
+      />
+      <div className="flex items-center justify-between gap-3 text-[11px] text-purple-200/60">
+        <span className="min-w-0 truncate">{item.audioName}</span>
+        <time className="shrink-0" dateTime={new Date(item.createdAt).toISOString()}>
+          {new Date(item.createdAt).toLocaleString()}
+        </time>
+      </div>
+      {videoUrl && (
+        <a
+          href={videoUrl}
+          download={item.filename}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-200 hover:text-white"
+        >
+          <Download className="h-4 w-4" /> Download MP4
+        </a>
+      )}
+    </article>
+  );
+};
 
 function base64ToFile(base64: string, name: string, mimeType: string): File {
   const binary = atob(base64);
@@ -54,9 +97,10 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
   const [visualDirection, setVisualDirection] = useState('');
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('9:16');
   const [isConverting, setIsConverting] = useState(false);
+  const [videoHistory, setVideoHistory] = useState<GeneratedVideoHistoryItem[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const selectedHistoryAudio = audioHistory.find((item) => item.id === selectedAudioId);
@@ -71,6 +115,26 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
   }, [sourceMode, audioFile, selectedHistoryAudio]);
 
   useEffect(() => {
+    let cancelled = false;
+    getVideoHistory().then((items) => {
+      if (!cancelled) {
+        setVideoHistory((current) => {
+          const currentIds = new Set(current.map((item) => item.id));
+          return [...current, ...items.filter((item) => !currentIds.has(item.id))]
+            .sort((a, b) => b.createdAt - a.createdAt);
+        });
+      }
+    }).catch((historyError: unknown) => {
+      if (!cancelled) setError(historyError instanceof Error ? historyError.message : 'Could not load video history.');
+    }).finally(() => {
+      if (!cancelled) setIsLoadingHistory(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!selectedFile) {
       setAudioUrl(null);
       return;
@@ -79,11 +143,6 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
     setAudioUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [selectedFile]);
-
-  useEffect(() => {
-    if (!videoUrl) return;
-    return () => URL.revokeObjectURL(videoUrl);
-  }, [videoUrl]);
 
   const handleConvert = async () => {
     if (!selectedFile) return;
@@ -94,7 +153,6 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
 
     setIsConverting(true);
     setError(null);
-    setVideoUrl(null);
 
     try {
       setStatus('Analyzing audio and planning scenes');
@@ -133,7 +191,17 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
       setStatus('Syncing the original audio with the video');
       const generatedVideo = base64ToFile(videoBase64, 'generated-video.mp4', 'video/mp4');
       const finalVideo = await muxAudioIntoVideo(generatedVideo, selectedFile);
-      setVideoUrl(URL.createObjectURL(finalVideo));
+      const audioBaseName = selectedFile.name.replace(/\.[^.]+$/, '') || 'audio';
+      const item: GeneratedVideoHistoryItem = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        video: finalVideo,
+        audioName: selectedFile.name,
+        filename: `${audioBaseName}-video.mp4`,
+        aspectRatio,
+        createdAt: Date.now(),
+      };
+      await saveVideoHistoryItem(item);
+      setVideoHistory((items) => [item, ...items]);
       setStatus('Video ready');
     } catch (conversionError: unknown) {
       setError(conversionError instanceof Error ? conversionError.message : 'Video generation failed.');
@@ -143,7 +211,17 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
     }
   };
 
+  const handleClearHistory = async () => {
+    try {
+      await clearVideoHistory();
+      setVideoHistory([]);
+    } catch (historyError: unknown) {
+      setError(historyError instanceof Error ? historyError.message : 'Could not clear video history.');
+    }
+  };
+
   return (
+    <div className="w-full max-w-lg mx-auto space-y-5 pb-24 text-white">
     <section className="space-y-4 border-b border-purple-900/40 pb-5">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300">
@@ -243,18 +321,43 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
       {status && <p className="text-xs text-emerald-200/80">{status}</p>}
       {error && <p role="alert" className="rounded-lg border border-rose-700/40 bg-rose-950/30 p-3 text-xs text-rose-200">{error}</p>}
 
-      {videoUrl && (
-        <div className="space-y-2">
-          <video controls playsInline src={videoUrl} className="max-h-[420px] w-full rounded-lg bg-black" />
-          <a
-            href={videoUrl}
-            download={`voicemack-video-${Date.now()}.mp4`}
-            className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/40 px-3 py-2.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-400/10"
+    </section>
+    <section className="space-y-4">
+      <header className="flex items-center justify-between gap-3 border-b border-purple-900/30 pb-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-purple-300/70">
+            <Clock3 className="h-3.5 w-3.5" />
+            <span>Saved videos</span>
+          </div>
+          <h2 className="mt-1 text-lg font-bold text-white">Video History</h2>
+        </div>
+        {videoHistory.length > 0 && (
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            title="Clear video history"
+            aria-label="Clear video history"
+            className="rounded-lg p-2 text-purple-300/70 transition-colors hover:bg-purple-900/30 hover:text-white"
           >
-            <Download className="h-4 w-4" /> Download MP4
-          </a>
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </header>
+      {isLoadingHistory ? (
+        <div className="flex min-h-24 items-center justify-center text-purple-200/60">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      ) : videoHistory.length === 0 ? (
+        <div className="flex min-h-28 flex-col items-center justify-center gap-2 text-center text-purple-200/60">
+          <Film className="h-6 w-6" />
+          <p className="text-xs">Generated videos will appear here.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {videoHistory.map((item) => <VideoHistoryItem key={item.id} item={item} />)}
         </div>
       )}
     </section>
+    </div>
   );
 };

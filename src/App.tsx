@@ -6,9 +6,10 @@ import {
   Bot,
   Mic,
   Volume2,
+  Video,
 } from 'lucide-react';
 import { TTSStudio } from './components/TTSStudio';
-import { LahorePhrases } from './components/LahorePhrases';
+import { AudioToVideo } from './components/AudioToVideo';
 import { LahoreTour } from './components/LahoreTour';
 import { TravelAssistant } from './components/TravelAssistant';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
@@ -78,7 +79,7 @@ export default function App() {
                 : 'text-purple-300/70 hover:text-white'
             }`}
           >
-            💬 Phrase Library
+            🎬 Audio to Video
           </button>
           <button
             onClick={() => setActiveTab('tour')}
@@ -114,7 +115,7 @@ export default function App() {
           {activeTab === 'history' && (
             <AudioHistory items={audioHistory} onClear={handleClearHistory} />
           )}
-          {activeTab === 'phrases' && <LahorePhrases audioHistory={audioHistory} />}
+          {activeTab === 'phrases' && <AudioToVideo audioHistory={audioHistory} />}
           {activeTab === 'tour' && <LahoreTour />}
           {activeTab === 'guide' && <TravelAssistant />}
           {activeTab === 'privacy' && <PrivacyPolicy onBack={() => setActiveTab('home')} />}
@@ -133,12 +134,12 @@ export default function App() {
         )}
 
         {/* Fixed Bottom Navigation Bar matching Mockup */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0716]/95 backdrop-blur-xl border-t border-purple-900/30 py-2.5 px-6">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0716]/95 backdrop-blur-xl border-t border-purple-900/30 py-2.5 px-3 sm:px-6">
           <div className="max-w-md mx-auto flex items-center justify-around">
             {/* Home Tab */}
             <button
               onClick={() => setActiveTab('home')}
-              className={`flex flex-col items-center gap-1 transition-colors ${
+              className={`min-w-0 flex flex-1 flex-col items-center gap-1 transition-colors ${
                 activeTab === 'home'
                   ? 'text-[#A855F7] font-bold'
                   : 'text-purple-300/50 hover:text-purple-200'
@@ -151,7 +152,7 @@ export default function App() {
             {/* Phrases / History Tab */}
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex flex-col items-center gap-1 transition-colors ${
+                className={`min-w-0 flex flex-1 flex-col items-center gap-1 transition-colors ${
                 activeTab === 'history'
                   ? 'text-[#A855F7] font-bold'
                   : 'text-purple-300/50 hover:text-purple-200'
@@ -161,10 +162,23 @@ export default function App() {
               <span className="text-[11px]">History</span>
             </button>
 
+            <button
+              onClick={() => setActiveTab('phrases')}
+              aria-label="Audio to Video"
+              className={`min-w-0 flex flex-1 flex-col items-center gap-1 transition-colors ${
+                activeTab === 'phrases'
+                  ? 'text-[#A855F7] font-bold'
+                  : 'text-purple-300/50 hover:text-purple-200'
+              }`}
+            >
+              <Video className="w-5 h-5" />
+              <span className="text-center text-[10px] leading-3">Audio to<br />Video</span>
+            </button>
+
             {/* Showcase Tab */}
             <button
               onClick={() => setActiveTab('tour')}
-              className={`flex flex-col items-center gap-1 transition-colors ${
+              className={`min-w-0 flex flex-1 flex-col items-center gap-1 transition-colors ${
                 activeTab === 'tour'
                   ? 'text-[#A855F7] font-bold'
                   : 'text-purple-300/50 hover:text-purple-200'
@@ -177,7 +191,7 @@ export default function App() {
             {/* AI Assistant Tab */}
             <button
               onClick={() => setActiveTab('guide')}
-              className={`flex flex-col items-center gap-1 transition-colors ${
+              className={`min-w-0 flex flex-1 flex-col items-center gap-1 transition-colors ${
                 activeTab === 'guide'
                   ? 'text-[#A855F7] font-bold'
                   : 'text-purple-300/50 hover:text-purple-200'

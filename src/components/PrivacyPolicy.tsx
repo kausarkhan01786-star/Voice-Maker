@@ -36,7 +36,7 @@ const policySections = [
   {
     title: 'Storage, cookies, and analytics',
     paragraphs: [
-      'VoiceMack does not require an account. Generated speech history is stored in this browser’s IndexedDB until you clear it from the History page or remove browser site data. The app uses in-memory caching for speech during a server session. Uploaded source audio and generated videos are not saved to a server-side library by VoiceMack.',
+      'VoiceMack does not require an account. Generated speech and video history are stored in this browser’s IndexedDB until you clear them from their history pages or remove browser site data. The app uses in-memory caching for speech during a server session. Uploaded source audio is not saved to a server-side library by VoiceMack.',
     ],
   },
   {
