@@ -85,3 +85,16 @@ export async function mixSpeechWithMusic(
 export function base64AudioToBlob(audioBase64: string, mimeType: string): Blob {
   return new Blob([decodeBase64(audioBase64)], { type: mimeType });
 }
+
+export async function audioBlobToBase64(blob: Blob): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('Could not read mixed audio.'));
+    };
+    reader.onerror = () => reject(reader.error || new Error('Could not read mixed audio.'));
+    reader.readAsDataURL(blob);
+  });
+  return dataUrl.slice(dataUrl.indexOf(',') + 1);
+}

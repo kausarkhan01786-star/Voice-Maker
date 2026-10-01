@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Home,
   Clock,
@@ -36,12 +36,12 @@ export default function App() {
     };
   }, []);
 
-  const handleAudioGenerated = (item: GeneratedAudioHistoryItem) => {
-    setAudioHistory((items) => [item, ...items]);
+  const handleAudioGenerated = useCallback((item: GeneratedAudioHistoryItem) => {
+    setAudioHistory((items) => [item, ...items.filter((entry) => entry.id !== item.id)]);
     void saveAudioHistoryItem(item).catch((error: unknown) => {
       console.error('Could not save audio history:', error);
     });
-  };
+  }, []);
 
   const handleClearHistory = () => {
     setAudioHistory([]);

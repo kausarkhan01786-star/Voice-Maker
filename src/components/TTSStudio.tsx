@@ -19,7 +19,7 @@ import { VOICE_PROFILES, STYLE_PRESETS, QUICK_PROMPTS } from '../data/lahoreData
 import microphoneImage from '../assets/images/microphone_glow_violet_1790654219590.jpg';
 import { AudioPlayer } from './AudioPlayer';
 import { postJson } from '../utils/api';
-import { base64AudioToBlob, mixSpeechWithMusic } from '../utils/audioMix';
+import { audioBlobToBase64, base64AudioToBlob, mixSpeechWithMusic } from '../utils/audioMix';
 import type { GeneratedAudioHistoryItem } from '../utils/audioHistory';
 import {
   getCachedAudio,
@@ -50,9 +50,11 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
   const [selectedStyle, setSelectedStyle] = useState('warm');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<{
+    id: string;
     base64: string;
     text: string;
     voice: string;
+    createdAt: number;
     modelUsed?: string;
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -88,17 +90,43 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
   }, [mixedAudioUrl]);
 
   useEffect(() => {
-    if (!currentAudio || !backgroundTrack) {
+    if (!currentAudio) {
       setMixedAudioUrl(null);
       setIsMixingAudio(false);
+      return;
+    }
+
+    if (!backgroundTrack) {
+      setMixedAudioUrl(null);
+      setIsMixingAudio(false);
+      onAudioGenerated?.({
+        id: currentAudio.id,
+        text: currentAudio.text,
+        voice: currentAudio.voice,
+        base64: currentAudio.base64,
+        mimeType: 'audio/wav',
+        createdAt: currentAudio.createdAt,
+      });
       return;
     }
 
     let cancelled = false;
     setIsMixingAudio(true);
     mixSpeechWithMusic(currentAudio.base64, backgroundTrack.blob, musicVolume / 100)
-      .then((mixedBlob) => {
-        if (!cancelled) setMixedAudioUrl(URL.createObjectURL(mixedBlob));
+      .then(async (mixedBlob) => {
+        if (cancelled) return;
+        setMixedAudioUrl(URL.createObjectURL(mixedBlob));
+        const mixedBase64 = await audioBlobToBase64(mixedBlob);
+        if (!cancelled) {
+          onAudioGenerated?.({
+            id: currentAudio.id,
+            text: currentAudio.text,
+            voice: currentAudio.voice,
+            base64: mixedBase64,
+            mimeType: mixedBlob.type || 'audio/wav',
+            createdAt: currentAudio.createdAt,
+          });
+        }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -113,7 +141,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [currentAudio?.base64, backgroundTrack, musicVolume]);
+  }, [currentAudio, backgroundTrack, musicVolume, onAudioGenerated]);
 
   const activeStyleObj =
     STYLE_PRESETS.find((s) => s.id === selectedStyle) || STYLE_PRESETS[0];
@@ -133,18 +161,22 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     const cacheKey = `${voiceToUse}::${textToSpeak.trim()}::${activeStyleObj.value}`;
     const cachedBase64 = getCachedAudio(cacheKey);
     if (cachedBase64) {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const createdAt = Date.now();
       const historyItem: GeneratedAudioHistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        id,
         text: textToSpeak.trim(),
         voice: voiceToUse,
         base64: cachedBase64,
         mimeType: 'audio/wav',
-        createdAt: Date.now(),
+        createdAt,
       };
       setCurrentAudio({
+        id,
         base64: cachedBase64,
         text: textToSpeak.trim(),
         voice: voiceToUse,
+        createdAt,
         modelUsed: 'gemini-3.8-flash-tts (cached)',
       });
       onAudioGenerated?.(historyItem);
@@ -174,21 +206,25 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
       if (data.audioBase64) {
         setCachedAudio(cacheKey, data.audioBase64);
         const mimeType = data.mimeType || 'audio/wav';
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const createdAt = Date.now();
 
         const newAudio = {
+          id,
           base64: data.audioBase64,
           text: textToSpeak.trim(),
           voice: voiceToUse,
+          createdAt,
           modelUsed: data.modelUsed || 'gemini-3.8-flash-tts',
         };
         setCurrentAudio(newAudio);
         onAudioGenerated?.({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id,
           text: newAudio.text,
           voice: newAudio.voice,
           base64: newAudio.base64,
           mimeType,
-          createdAt: Date.now(),
+          createdAt,
         });
       }
     } catch (err: any) {
