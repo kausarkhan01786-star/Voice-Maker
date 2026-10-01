@@ -20,6 +20,7 @@ import microphoneImage from '../assets/images/microphone_glow_violet_17906542195
 import { AudioPlayer } from './AudioPlayer';
 import { postJson } from '../utils/api';
 import { base64AudioToBlob, mixSpeechWithMusic } from '../utils/audioMix';
+import type { GeneratedAudioHistoryItem } from '../utils/audioHistory';
 import {
   getCachedAudio,
   setCachedAudio,
@@ -29,6 +30,7 @@ import {
 interface TTSStudioProps {
   initialText?: string;
   onNavigateToHistory?: () => void;
+  onAudioGenerated?: (item: GeneratedAudioHistoryItem) => void;
 }
 
 interface BackgroundTrack {
@@ -41,6 +43,7 @@ interface BackgroundTrack {
 export const TTSStudio: React.FC<TTSStudioProps> = ({
   initialText = 'Welcome to VoiceMack! Experience the next generation of realistic speech synthesis.',
   onNavigateToHistory,
+  onAudioGenerated,
 }) => {
   const [inputText, setInputText] = useState(initialText);
   const [selectedVoice, setSelectedVoice] = useState('Kore');
@@ -130,12 +133,21 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     const cacheKey = `${voiceToUse}::${textToSpeak.trim()}::${activeStyleObj.value}`;
     const cachedBase64 = getCachedAudio(cacheKey);
     if (cachedBase64) {
+      const historyItem: GeneratedAudioHistoryItem = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        text: textToSpeak.trim(),
+        voice: voiceToUse,
+        base64: cachedBase64,
+        mimeType: 'audio/wav',
+        createdAt: Date.now(),
+      };
       setCurrentAudio({
         base64: cachedBase64,
         text: textToSpeak.trim(),
         voice: voiceToUse,
         modelUsed: 'gemini-3.8-flash-tts (cached)',
       });
+      onAudioGenerated?.(historyItem);
       return;
     }
 
@@ -161,6 +173,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
 
       if (data.audioBase64) {
         setCachedAudio(cacheKey, data.audioBase64);
+        const mimeType = data.mimeType || 'audio/wav';
 
         const newAudio = {
           base64: data.audioBase64,
@@ -169,6 +182,14 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
           modelUsed: data.modelUsed || 'gemini-3.8-flash-tts',
         };
         setCurrentAudio(newAudio);
+        onAudioGenerated?.({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          text: newAudio.text,
+          voice: newAudio.voice,
+          base64: newAudio.base64,
+          mimeType,
+          createdAt: Date.now(),
+        });
       }
     } catch (err: any) {
       console.error('TTS Generation error:', err);

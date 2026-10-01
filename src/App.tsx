@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Home,
   Clock,
@@ -12,9 +12,43 @@ import { LahorePhrases } from './components/LahorePhrases';
 import { LahoreTour } from './components/LahoreTour';
 import { TravelAssistant } from './components/TravelAssistant';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { AudioHistory } from './components/AudioHistory';
+import {
+  clearAudioHistory,
+  getAudioHistory,
+  saveAudioHistoryItem,
+  type GeneratedAudioHistoryItem,
+} from './utils/audioHistory';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'phrases' | 'tour' | 'guide' | 'privacy'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'phrases' | 'tour' | 'guide' | 'privacy'>('home');
+  const [audioHistory, setAudioHistory] = useState<GeneratedAudioHistoryItem[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAudioHistory().then((items) => {
+      if (!cancelled) setAudioHistory(items);
+    }).catch((error: unknown) => {
+      console.error('Could not load audio history:', error);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleAudioGenerated = (item: GeneratedAudioHistoryItem) => {
+    setAudioHistory((items) => [item, ...items]);
+    void saveAudioHistoryItem(item).catch((error: unknown) => {
+      console.error('Could not save audio history:', error);
+    });
+  };
+
+  const handleClearHistory = () => {
+    setAudioHistory([]);
+    void clearAudioHistory().catch((error: unknown) => {
+      console.error('Could not clear audio history:', error);
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#07040F] text-[#F1F0F5] flex flex-col items-center justify-start antialiased selection:bg-purple-600 selection:text-white relative overflow-x-hidden pt-3 sm:pt-4">
@@ -73,8 +107,12 @@ export default function App() {
           {activeTab === 'home' && (
             <TTSStudio
               initialText="Welcome to VoiceMack! Experience the next generation of realistic speech synthesis."
-              onNavigateToHistory={() => setActiveTab('phrases')}
+              onNavigateToHistory={() => setActiveTab('history')}
+              onAudioGenerated={handleAudioGenerated}
             />
+          )}
+          {activeTab === 'history' && (
+            <AudioHistory items={audioHistory} onClear={handleClearHistory} />
           )}
           {activeTab === 'phrases' && <LahorePhrases />}
           {activeTab === 'tour' && <LahoreTour />}
@@ -112,9 +150,9 @@ export default function App() {
 
             {/* Phrases / History Tab */}
             <button
-              onClick={() => setActiveTab('phrases')}
+              onClick={() => setActiveTab('history')}
               className={`flex flex-col items-center gap-1 transition-colors ${
-                activeTab === 'phrases'
+                activeTab === 'history'
                   ? 'text-[#A855F7] font-bold'
                   : 'text-purple-300/50 hover:text-purple-200'
               }`}
