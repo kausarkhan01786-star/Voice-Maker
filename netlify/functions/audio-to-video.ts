@@ -33,6 +33,24 @@ function jsonResponse(statusCode: number, payload: Record<string, unknown>): Net
   };
 }
 
+function isTemporaryUnavailable(error: any): boolean {
+  const details = [error?.status, error?.statusCode, error?.code, error?.message]
+    .map((value) => String(value || ''))
+    .join(' ');
+  return /503|UNAVAILABLE|high demand|temporarily unavailable|overloaded/i.test(details);
+}
+
+async function withUnavailableRetry<T>(request: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await request();
+    } catch (error) {
+      if (!isTemporaryUnavailable(error) || attempt >= 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
+}
+
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed.' });
@@ -61,7 +79,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return jsonResponse(400, { error: 'Use a WAV, MP3, AAC, OGG, FLAC, M4A, or WebM audio file.' });
       }
 
-      const analysis = await gemini.models.generateContent({
+      const analysis = await withUnavailableRetry(() => gemini.models.generateContent({
         model: 'gemini-3.8-flash',
         contents: [{
           role: 'user',
@@ -72,7 +90,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
             { inlineData: { mimeType, data: audioBase64 } },
           ],
         }],
-      });
+      }));
       const visualTreatment = analysis.text?.trim();
       if (!visualTreatment) {
         return jsonResponse(502, { error: 'Could not understand the audio well enough to create a video.' });
@@ -81,7 +99,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         ? body.visualDirection.trim().slice(0, 500)
         : '';
 
-      const videoOperation = await gemini.interactions.create({
+      const videoOperation = await withUnavailableRetry(() => gemini.interactions.create({
         model: 'gemini-omni-1.1-flash',
         input: `Create a short photorealistic video inspired by this audio. Use natural lighting, believable motion, coherent locations, realistic details, and cinematic but restrained camera movement. No subtitles, logos, or added dialogue. The original audio will be added to the final video, so generate no music or sound effects. Audio interpretation: ${visualTreatment}${userDirection ? ` Visual direction: ${userDirection}` : ''}`,
         response_format: {
@@ -92,7 +110,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         },
         background: true,
         store: true,
-      });
+      }));
       return jsonResponse(200, {
         stage: 'video',
         operationId: videoOperation.id,
@@ -104,9 +122,12 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return jsonResponse(400, { error: 'Invalid video generation request.' });
     }
 
-    const operation = await gemini.interactions.get(body.operationId);
+    const operation = await withUnavailableRetry(() => gemini.interactions.get(body.operationId));
     const status = operation.status.toLowerCase();
     if (status === 'failed' || status === 'cancelled') {
+      if (isTemporaryUnavailable(JSON.stringify(operation.errors || []))) {
+        return jsonResponse(503, { error: 'Gemini is temporarily overloaded. Please wait a minute, then try creating the video again.' });
+      }
       return jsonResponse(502, { error: 'Gemini could not complete this generation. Check model availability and billing, then try again.' });
     }
     if (status !== 'completed') {
@@ -124,8 +145,9 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     return jsonResponse(400, { error: 'Invalid video generation stage.' });
   } catch (error: any) {
     console.error('Audio-to-video generation error:', error);
-    return jsonResponse(500, {
-      error: error?.message || 'Audio-to-video generation failed. Check Gemini model access and billing.',
-    });
+    if (isTemporaryUnavailable(error)) {
+      return jsonResponse(503, { error: 'Gemini is temporarily overloaded. Please wait a minute, then try again.' });
+    }
+    return jsonResponse(500, { error: error?.message || 'Audio-to-video generation failed. Check Gemini model access and billing.' });
   }
 }
