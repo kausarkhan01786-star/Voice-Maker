@@ -61,48 +61,26 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return jsonResponse(400, { error: 'Use a WAV, MP3, AAC, OGG, FLAC, M4A, or WebM audio file.' });
       }
 
-      const operation = await gemini.interactions.create({
+      const analysis = await gemini.models.generateContent({
         model: 'gemini-3.8-flash',
-        input: [
-          {
-            type: 'text',
-            text: 'Analyze this audio for its spoken content, sounds, mood, setting, and pacing. Return a concise visual treatment for a photorealistic short video that illustrates the audio. Do not invent visible dialogue or captions. Focus on coherent scenes and natural camera motion.',
-          },
-          { type: 'audio', data: audioBase64, mime_type: mimeType },
-        ],
-        background: true,
-        store: true,
+        contents: [{
+          role: 'user',
+          parts: [
+            {
+              text: 'Analyze this audio for its spoken content, sounds, mood, setting, and pacing. Return a concise visual treatment for a photorealistic short video that illustrates the audio. Do not invent visible dialogue or captions. Focus on coherent scenes and natural camera motion.',
+            },
+            { inlineData: { mimeType, data: audioBase64 } },
+          ],
+        }],
       });
-
-      return jsonResponse(200, {
-        stage: 'analysis',
-        operationId: operation.id,
-        done: false,
-      });
-    }
-
-    if (body.action !== 'poll' || typeof body.operationId !== 'string' || !body.operationId) {
-      return jsonResponse(400, { error: 'Invalid video generation request.' });
-    }
-
-    const operation = await gemini.interactions.get(body.operationId);
-    const status = operation.status.toLowerCase();
-    if (status === 'failed' || status === 'cancelled') {
-      return jsonResponse(502, { error: 'Gemini could not complete this generation. Check model availability and billing, then try again.' });
-    }
-    if (status !== 'completed') {
-      return jsonResponse(200, { stage: body.stage, operationId: operation.id, done: false });
-    }
-
-    if (body.stage === 'analysis') {
-      const visualTreatment = operation.output_text?.trim();
+      const visualTreatment = analysis.text?.trim();
       if (!visualTreatment) {
         return jsonResponse(502, { error: 'Could not understand the audio well enough to create a video.' });
       }
       const userDirection = typeof body.visualDirection === 'string'
         ? body.visualDirection.trim().slice(0, 500)
         : '';
-      const aspectRatio = body.aspectRatio === '9:16' ? '9:16' : '16:9';
+
       const videoOperation = await gemini.interactions.create({
         model: 'gemini-omni-1.1-flash',
         input: `Create a short photorealistic video inspired by this audio. Use natural lighting, believable motion, coherent locations, realistic details, and cinematic but restrained camera movement. No subtitles, logos, or added dialogue. The original audio will be added to the final video, so generate no music or sound effects. Audio interpretation: ${visualTreatment}${userDirection ? ` Visual direction: ${userDirection}` : ''}`,
@@ -120,6 +98,19 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         operationId: videoOperation.id,
         done: false,
       });
+    }
+
+    if (body.action !== 'poll' || typeof body.operationId !== 'string' || !body.operationId) {
+      return jsonResponse(400, { error: 'Invalid video generation request.' });
+    }
+
+    const operation = await gemini.interactions.get(body.operationId);
+    const status = operation.status.toLowerCase();
+    if (status === 'failed' || status === 'cancelled') {
+      return jsonResponse(502, { error: 'Gemini could not complete this generation. Check model availability and billing, then try again.' });
+    }
+    if (status !== 'completed') {
+      return jsonResponse(200, { stage: body.stage, operationId: operation.id, done: false });
     }
 
     if (body.stage === 'video') {

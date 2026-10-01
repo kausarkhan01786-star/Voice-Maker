@@ -14,7 +14,7 @@ interface AudioToVideoProps {
   audioHistory: GeneratedAudioHistoryItem[];
 }
 
-type ConversionStage = 'analysis' | 'video';
+type ConversionStage = 'video';
 
 const VideoHistoryItem: React.FC<{ item: GeneratedVideoHistoryItem }> = ({ item }) => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -164,6 +164,8 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
         action: 'start',
         audioBase64: await fileToBase64(analysisFile),
         mimeType: getGeminiAudioMimeType(analysisFile) || 'audio/wav',
+        visualDirection,
+        aspectRatio,
       });
       if (!startResponse.ok) throw new Error(startData.error || 'Could not analyze the audio.');
 
@@ -172,7 +174,7 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
       let videoBase64: string | undefined;
 
       for (let attempt = 0; attempt < 90; attempt += 1) {
-        setStatus(stage === 'analysis' ? 'Understanding the audio' : 'Generating realistic video');
+        setStatus('Generating realistic video');
         await wait(4000);
         const { response, data } = await postJson('/api/audio-to-video', {
           action: 'poll',
