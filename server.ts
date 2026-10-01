@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { handler as audioToVideoHandler } from './netlify/functions/audio-to-video';
 
 dotenv.config();
 
@@ -251,6 +252,14 @@ app.post('/api/music', async (req, res) => {
     console.error('Error generating background music:', error);
     res.status(500).json({ error: error?.message || 'Failed to generate background music.' });
   }
+});
+
+app.post('/api/audio-to-video', async (req, res) => {
+  const result = await audioToVideoHandler({
+    httpMethod: req.method,
+    body: JSON.stringify(req.body),
+  });
+  res.status(result.statusCode).set(result.headers).send(result.body);
 });
 
 // Vite middleware mounting in development or static hosting in production

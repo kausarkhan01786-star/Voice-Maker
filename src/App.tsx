@@ -114,7 +114,7 @@ export default function App() {
           {activeTab === 'history' && (
             <AudioHistory items={audioHistory} onClear={handleClearHistory} />
           )}
-          {activeTab === 'phrases' && <LahorePhrases />}
+          {activeTab === 'phrases' && <LahorePhrases audioHistory={audioHistory} />}
           {activeTab === 'tour' && <LahoreTour />}
           {activeTab === 'guide' && <TravelAssistant />}
           {activeTab === 'privacy' && <PrivacyPolicy onBack={() => setActiveTab('home')} />}

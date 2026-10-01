@@ -20,3 +20,9 @@
   to = "/.netlify/functions/music"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/audio-to-video"
+  to = "/.netlify/functions/audio-to-video"
+  status = 200
+  force = true

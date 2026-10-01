@@ -11,6 +11,7 @@ const policySections = [
     paragraphs: [
       'When you use speech generation, the text, selected voice, and style instructions you submit are sent to Google Gemini to create audio. When you use AI music generation, your music description is sent to Google Gemini to create a music clip. Questions submitted to the AI Assistant are also sent to Google Gemini so it can prepare a response.',
       'Audio files you choose with the Background Music upload control are processed in your browser to preview and mix with generated speech. The app does not upload those selected files to its server.',
+      'When you use Audio to Video, the audio you select is sent through the VoiceMack server to Google Gemini for analysis and video generation. The generated video is returned to your browser, where the selected original audio is added before preview or download.',
     ],
   },
   {
@@ -23,7 +24,7 @@ const policySections = [
   {
     title: 'Service providers',
     paragraphs: [
-      'Voice generation, AI music generation, and assistant responses rely on Google Gemini APIs. The website is hosted by Netlify. Those providers may process technical request data under their own terms and privacy policies. Review Google’s and Netlify’s current policies for details about their handling and retention practices.',
+      'Voice generation, AI music generation, assistant responses, and audio-to-video generation rely on Google Gemini APIs. The website is hosted by Netlify. Those providers may process technical request data under their own terms and privacy policies. Review Google’s and Netlify’s current policies for details about their handling and retention practices.',
     ],
   },
   {
@@ -35,13 +36,13 @@ const policySections = [
   {
     title: 'Storage, cookies, and analytics',
     paragraphs: [
-      'VoiceMack does not require an account, and generated audio is not saved to a personal library by this app. The app uses in-memory caching for speech during a server session. Netlify or other service providers may use essential technical storage or collect operational logs to provide and protect their services; consult their policies for provider-specific details.',
+      'VoiceMack does not require an account. Generated speech history is stored in this browser’s IndexedDB until you clear it from the History page or remove browser site data. The app uses in-memory caching for speech during a server session. Uploaded source audio and generated videos are not saved to a server-side library by VoiceMack.',
     ],
   },
   {
     title: 'Your choices',
     paragraphs: [
-      'You can stop using a feature before submitting its text or prompt. Uploaded background audio stays in the current browser session; removing the track or closing the page removes it from the app interface. You can also clear locally cached browser data through your browser settings.',
+      'You can stop using a feature before submitting its text, prompt, or audio. You can clear generated speech from the History page. Uploaded background audio and generated video files are kept in the current browser session; closing the page removes them from the app interface. You can also clear locally stored data through your browser settings.',
     ],
   },
   {
@@ -69,9 +70,9 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => (
         VoiceMack · Legal
       </div>
       <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">Privacy Policy</h1>
-      <p className="mt-3 text-sm text-purple-200/70">Last updated: September 29, 2026</p>
+      <p className="mt-3 text-sm text-purple-200/70">Last updated: October 1, 2026</p>
       <p className="mt-5 max-w-xl text-sm leading-6 text-purple-100/85">
-        This page explains what happens to information when you use VoiceMack’s speech, music, and AI assistant features.
+        This page explains what happens to information when you use VoiceMack’s speech, music, video, and AI assistant features.
       </p>
     </header>
 
