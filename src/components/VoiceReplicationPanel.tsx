@@ -42,7 +42,7 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
   const [sourcePreview, setSourcePreview] = useState<string | null>(null);
   const [consentPreview, setConsentPreview] = useState<string | null>(null);
   const [ownerConfirmed, setOwnerConfirmed] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTarget, setRecordingTarget] = useState<'source' | 'consent' | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -73,7 +73,7 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
     streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
-  const startConsentRecording = async () => {
+  const startRecording = async (target: 'source' | 'consent') => {
     setError(null);
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
@@ -90,21 +90,43 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
       recorder.onstop = () => {
         const mimeType = recorder.mimeType || 'audio/webm';
         const extension = mimeType.includes('wav') ? 'wav' : 'webm';
-        setConsentAudio(new File(chunks, `voice-consent.${extension}`, { type: mimeType }));
+        const recordedFile = new File(
+          chunks,
+          target === 'source' ? `voice-sample.${extension}` : `voice-consent.${extension}`,
+          { type: mimeType }
+        );
+        if (target === 'source') setSourceAudio(recordedFile);
+        else setConsentAudio(recordedFile);
         stream.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
-        setIsRecording(false);
+        setRecordingTarget(null);
       };
       recorder.start();
-      setConsentAudio(null);
-      setIsRecording(true);
+      if (target === 'source') setSourceAudio(null);
+      else setConsentAudio(null);
+      setRecordingTarget(target);
     } catch (recordingError: unknown) {
       setError(recordingError instanceof Error ? recordingError.message : 'Could not start microphone recording.');
     }
   };
 
-  const stopConsentRecording = () => {
+  const stopRecording = () => {
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
+  };
+
+  const handleAudioUpload = (target: 'source' | 'consent', file: File | undefined) => {
+    setError(null);
+    if (!file) return;
+    if (!file.type.startsWith('audio/')) {
+      setError('Choose an audio recording.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Each recording must be 10 MB or smaller.');
+      return;
+    }
+    if (target === 'source') setSourceAudio(file);
+    else setConsentAudio(file);
   };
 
   const createVoice = async () => {
@@ -142,6 +164,16 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
       setIsCreating(false);
     }
   };
+
+  const requirements = [
+    { ready: Boolean(name.trim()), label: 'Enter a voice name.' },
+    { ready: Boolean(sourceAudio), label: 'Record or upload a 10-30 second voice sample.' },
+    { ready: Boolean(consentAudio), label: 'Record or upload the consent statement by the same speaker.' },
+    { ready: ownerConfirmed, label: 'Confirm the voice owner is an adult and gave consent.' },
+  ];
+  const canCreateVoice = requirements.every((requirement) => requirement.ready)
+    && !isCreating
+    && recordingTarget === null;
 
   return (
     <section className="space-y-3 border-t border-purple-900/30 pt-4" aria-labelledby="voice-replication-heading">
@@ -186,36 +218,64 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
         maxLength={48}
         placeholder="Voice name"
         aria-label="Voice name"
-        disabled={isCreating || isRecording}
+        disabled={isCreating || recordingTarget !== null}
         className="w-full rounded-lg border border-purple-800/50 bg-[#100A20] px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
       />
 
       <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-purple-700/50 bg-[#100A20] px-3 py-3 text-xs text-purple-100 hover:border-emerald-400/70">
         <Upload className="h-4 w-4 shrink-0 text-emerald-300" />
-        <span className="min-w-0 truncate">{sourceAudio?.name || 'Voice sample (10-30 sec)'}</span>
+        <span className="min-w-0 truncate">{sourceAudio?.name || 'Upload voice sample (10-30 sec)'}</span>
         <input
           type="file"
           accept="audio/*"
-          disabled={isCreating || isRecording}
+          disabled={isCreating || recordingTarget !== null}
           className="sr-only"
-          onChange={(event) => setSourceAudio(event.target.files?.[0] || null)}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            handleAudioUpload('source', file);
+          }}
         />
       </label>
+      <button
+        type="button"
+        onClick={recordingTarget === 'source' ? stopRecording : () => void startRecording('source')}
+        disabled={isCreating || (recordingTarget !== null && recordingTarget !== 'source')}
+        className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold ${recordingTarget === 'source' ? 'bg-rose-700 text-white' : 'border border-purple-800/50 text-purple-100 hover:bg-purple-900/30'}`}
+      >
+        <Mic className="h-4 w-4" />
+        {recordingTarget === 'source' ? 'Stop voice sample' : sourceAudio ? 'Record sample again' : 'Record voice sample'}
+      </button>
       {sourcePreview && <audio controls preload="metadata" src={sourcePreview} className="h-9 w-full" />}
 
       <div className="space-y-2 rounded-lg border border-purple-900/40 bg-[#100A20] p-3">
         <p className="text-xs font-semibold text-purple-100">Consent recording, by the same speaker:</p>
         <p lang="bn" className="text-xs leading-5 text-purple-200/70">{CONSENT_STATEMENT}</p>
         <p className="text-[11px] leading-4 text-purple-300/60">The voice key stays in this browser for 7 days. Recordings are sent to Google for verification and are not saved in your VoiceMack profile.</p>
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-purple-700/50 px-3 py-2.5 text-xs text-purple-100 hover:border-emerald-400/70">
+          <Upload className="h-4 w-4 shrink-0 text-emerald-300" />
+          <span className="min-w-0 truncate">{consentAudio?.name || 'Upload consent recording (3-20 sec)'}</span>
+          <input
+            type="file"
+            accept="audio/*"
+            disabled={isCreating || recordingTarget !== null}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              handleAudioUpload('consent', file);
+            }}
+          />
+        </label>
         {consentPreview && <audio controls preload="metadata" src={consentPreview} className="h-9 w-full" />}
         <button
           type="button"
-          onClick={isRecording ? stopConsentRecording : startConsentRecording}
-          disabled={isCreating}
-          className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold ${isRecording ? 'bg-rose-700 text-white' : 'border border-purple-800/50 text-purple-100 hover:bg-purple-900/30'}`}
+          onClick={recordingTarget === 'consent' ? stopRecording : () => void startRecording('consent')}
+          disabled={isCreating || (recordingTarget !== null && recordingTarget !== 'consent')}
+          className={`flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold ${recordingTarget === 'consent' ? 'bg-rose-700 text-white' : 'border border-purple-800/50 text-purple-100 hover:bg-purple-900/30'}`}
         >
           <Mic className="h-4 w-4" />
-          {isRecording ? 'Stop consent recording' : consentAudio ? 'Record consent again' : 'Record consent'}
+          {recordingTarget === 'consent' ? 'Stop consent recording' : consentAudio ? 'Record consent again' : 'Record consent'}
         </button>
       </div>
 
@@ -230,10 +290,19 @@ export const VoiceReplicationPanel: React.FC<VoiceReplicationPanelProps> = ({
         <span>The voice owner is an adult and personally recorded the consent statement above.</span>
       </label>
 
+      <ul className="space-y-1 text-[11px] text-purple-200/65" aria-live="polite">
+        {requirements.filter((requirement) => !requirement.ready).map((requirement) => (
+          <li key={requirement.label}>• {requirement.label}</li>
+        ))}
+        {requirements.every((requirement) => requirement.ready) && (
+          <li className="text-emerald-200">Both recordings and consent are ready.</li>
+        )}
+      </ul>
+
       <button
         type="button"
         onClick={() => void createVoice()}
-        disabled={!sourceAudio || !consentAudio || !ownerConfirmed || !name.trim() || isCreating || isRecording}
+        disabled={!canCreateVoice}
         className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-3 text-xs font-bold text-[#07110E] hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isCreating && <Loader2 className="h-4 w-4 animate-spin" />}
