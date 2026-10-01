@@ -11,12 +11,19 @@ type NetlifyResponse = {
   body: string;
 };
 
-const ai = process.env.GEMINI_API_KEY
-  ? new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+let ai: GoogleGenAI | null | undefined;
+
+function getAI(): GoogleGenAI | null {
+  if (ai !== undefined) return ai;
+  const apiKey = process.env.GEMINI_API_KEY;
+  ai = apiKey
+    ? new GoogleGenAI({
+      apiKey,
       httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
     })
   : null;
+  return ai;
+}
 
 function jsonResponse(statusCode: number, payload: Record<string, unknown>): NetlifyResponse {
   return {
@@ -30,7 +37,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed.' });
   }
-  if (!ai) {
+  const gemini = getAI();
+  if (!gemini) {
     return jsonResponse(503, { error: 'Gemini API is not configured. Add GEMINI_API_KEY to your environment variables.' });
   }
 
@@ -53,7 +61,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return jsonResponse(400, { error: 'Use a WAV, MP3, AAC, OGG, FLAC, M4A, or WebM audio file.' });
       }
 
-      const operation = await ai.interactions.create({
+      const operation = await gemini.interactions.create({
         model: 'gemini-3.8-flash',
         input: [
           {
@@ -77,7 +85,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
       return jsonResponse(400, { error: 'Invalid video generation request.' });
     }
 
-    const operation = await ai.interactions.get(body.operationId);
+    const operation = await gemini.interactions.get(body.operationId);
     const status = operation.status.toLowerCase();
     if (status === 'failed' || status === 'cancelled') {
       return jsonResponse(502, { error: 'Gemini could not complete this generation. Check model availability and billing, then try again.' });
@@ -95,7 +103,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         ? body.visualDirection.trim().slice(0, 500)
         : '';
       const aspectRatio = body.aspectRatio === '9:16' ? '9:16' : '16:9';
-      const videoOperation = await ai.interactions.create({
+      const videoOperation = await gemini.interactions.create({
         model: 'gemini-omni-1.1-flash',
         input: `Create a short photorealistic video inspired by this audio. Use natural lighting, believable motion, coherent locations, realistic details, and cinematic but restrained camera movement. No subtitles, logos, or added dialogue. The original audio will be added to the final video, so generate no music or sound effects. Audio interpretation: ${visualTreatment}${userDirection ? ` Visual direction: ${userDirection}` : ''}`,
         response_format: {

@@ -7,7 +7,7 @@ import {
   saveVideoHistoryItem,
   type GeneratedVideoHistoryItem,
 } from '../utils/videoHistory';
-import { muxAudioIntoVideo } from '../utils/videoMux';
+import { compressAudioForAnalysis, muxAudioIntoVideo } from '../utils/videoMux';
 import { postJson } from '../utils/api';
 
 interface AudioToVideoProps {
@@ -146,8 +146,8 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
 
   const handleConvert = async () => {
     if (!selectedFile) return;
-    if (selectedFile.size > 3 * 1024 * 1024) {
-      setError('Audio must be 3 MB or smaller.');
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError('Audio must be 10 MB or smaller.');
       return;
     }
 
@@ -155,11 +155,15 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
     setError(null);
 
     try {
+      setStatus(selectedFile.size > 3 * 1024 * 1024 ? 'Preparing audio for analysis' : 'Analyzing audio and planning scenes');
+      const analysisFile = selectedFile.size > 3 * 1024 * 1024
+        ? await compressAudioForAnalysis(selectedFile)
+        : selectedFile;
       setStatus('Analyzing audio and planning scenes');
       const { response: startResponse, data: startData } = await postJson('/api/audio-to-video', {
         action: 'start',
-        audioBase64: await fileToBase64(selectedFile),
-        mimeType: getGeminiAudioMimeType(selectedFile) || 'audio/wav',
+        audioBase64: await fileToBase64(analysisFile),
+        mimeType: getGeminiAudioMimeType(analysisFile) || 'audio/wav',
       });
       if (!startResponse.ok) throw new Error(startData.error || 'Could not analyze the audio.');
 
@@ -258,7 +262,7 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
       {sourceMode === 'upload' ? (
         <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-purple-700/50 bg-[#100A20] px-4 py-4 text-center hover:border-emerald-400/70">
           <Upload className="h-5 w-5 text-emerald-300" />
-          <span className="text-xs text-purple-100">{audioFile?.name || 'Choose an audio file, up to 3 MB'}</span>
+          <span className="text-xs text-purple-100">{audioFile?.name || 'Choose an audio file, up to 10 MB'}</span>
           <input
             type="file"
             accept="audio/*"
