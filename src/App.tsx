@@ -130,6 +130,9 @@ export default function App() {
             >
               Privacy Policy
             </button>
+            <p className="mt-2 text-[10px] text-purple-300/45">
+              © 2026 Kausar Mia. All rights reserved.
+            </p>
           </footer>
         )}
 

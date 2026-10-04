@@ -12,7 +12,6 @@ const policySections = [
       'When you use speech generation, the text, selected voice, and style instructions you submit are sent to Google Gemini to create audio. When you use AI music generation, your music description is sent to Google Gemini to create a music clip. Questions submitted to the AI Assistant are also sent to Google Gemini so it can prepare a response.',
       'Audio files you choose with the Background Music upload control are processed in your browser to preview and mix with generated speech. The app does not upload those selected files to its server.',
       'When you use Audio to Video, the audio you select is sent through the VoiceMack server to Google Gemini for analysis and video generation. The generated video is returned to your browser, where the selected original audio is added before preview or download.',
-      'Voice replication sends a 10-30 second voice sample and a consent recording from the same adult speaker to Google Gemini. Replicated voice keys are stored only in this browser and expire after seven days; source recordings are not saved by VoiceMack.',
     ],
   },
   {
@@ -25,7 +24,7 @@ const policySections = [
   {
     title: 'Service providers',
     paragraphs: [
-      'Voice generation, voice replication, AI music generation, assistant responses, and audio-to-video generation rely on Google Gemini APIs. The website is hosted by Netlify. Those providers may process technical request data under their own terms and privacy policies. Review Google’s and Netlify’s current policies for details about their handling and retention practices.',
+      'Voice generation, AI music generation, assistant responses, and audio-to-video generation rely on Google Gemini APIs. The website is hosted by Netlify. Those providers may process technical request data under their own terms and privacy policies. Review Google’s and Netlify’s current policies for details about their handling and retention practices.',
     ],
   },
   {
@@ -37,13 +36,13 @@ const policySections = [
   {
     title: 'Storage, cookies, and analytics',
     paragraphs: [
-      'VoiceMack does not require an account. Generated speech and video history and stateless replicated voice keys are stored in this browser’s IndexedDB until you clear them or remove browser site data. Replicated voice keys expire after seven days. The app uses in-memory caching for speech during a server session. Uploaded source audio is not saved to a server-side library by VoiceMack.',
+      'VoiceMack does not require an account. Generated speech and video history are stored in this browser’s IndexedDB until you clear them or remove browser site data. The app uses in-memory caching for speech during a server session.',
     ],
   },
   {
     title: 'Your choices',
     paragraphs: [
-      'You can stop using a feature before submitting its text, prompt, or audio. You can remove a replicated voice from Voice Studio, clear generated speech from the History page, or clear locally stored data through your browser settings. Uploaded background audio and generated video files are kept in the current browser session; closing the page removes them from the app interface.',
+      'You can stop using a feature before submitting its text, prompt, or audio. You can clear generated speech from the History page or clear locally stored data through your browser settings. Uploaded background audio and generated video files are kept in the current browser session; closing the page removes them from the app interface.',
     ],
   },
   {
@@ -71,7 +70,7 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => (
         VoiceMack · Legal
       </div>
       <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">Privacy Policy</h1>
-      <p className="mt-3 text-sm text-purple-200/70">Last updated: October 1, 2026</p>
+      <p className="mt-3 text-sm text-purple-200/70">Last updated: October 4, 2026</p>
       <p className="mt-5 max-w-xl text-sm leading-6 text-purple-100/85">
         This page explains what happens to information when you use VoiceMack’s speech, music, video, and AI assistant features.
       </p>

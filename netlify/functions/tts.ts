@@ -34,9 +34,6 @@ function jsonResponse(statusCode: number, payload: Record<string, unknown>): Net
 }
 
 async function generateAudio(model: string, text: string, voice: string, style: string) {
-  const voiceConfig = voice.startsWith('voicekey_') || voice.startsWith('voice_')
-    ? { voice }
-    : { prebuiltVoiceConfig: { voiceName: voice } };
   return ai!.models.generateContent({
     model,
     contents: [{
@@ -46,7 +43,7 @@ async function generateAudio(model: string, text: string, voice: string, style: 
     config: {
       responseModalities: ['AUDIO'],
       speechConfig: {
-        voiceConfig,
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
       },
     },
   });
@@ -67,8 +64,7 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
     }
 
     const validVoices = ['Kore', 'Puck', 'Fenrir', 'Zephyr', 'Charon'];
-    const isReplicatedVoice = typeof voice === 'string' && /^voice(?:key)?_[a-zA-Z0-9_-]+$/.test(voice);
-    const selectedVoice = validVoices.includes(voice) || isReplicatedVoice ? voice : 'Kore';
+    const selectedVoice = validVoices.includes(voice) ? voice : 'Kore';
     const cacheKey = `${selectedVoice}::${text.trim()}::${style}`;
     const cached = audioCache.get(cacheKey);
     if (cached) return jsonResponse(200, { ...cached, cached: true });
