@@ -113,20 +113,28 @@ export default function App() {
 
         {/* Main Tab Content */}
         <main className="flex-1 w-full pt-1">
-          {activeTab === 'home' && (
+          <div hidden={activeTab !== 'home'}>
             <TTSStudio
               initialText="Welcome to VoiceMack! Experience the next generation of realistic speech synthesis."
               onNavigateToHistory={() => setActiveTab('history')}
               onAudioGenerated={handleAudioGenerated}
             />
-          )}
-          {activeTab === 'history' && (
+          </div>
+          <div hidden={activeTab !== 'history'}>
             <AudioHistory items={audioHistory} onClear={handleClearHistory} onDelete={handleDeleteAudio} />
-          )}
-          {activeTab === 'phrases' && <AudioToVideo audioHistory={audioHistory} />}
-          {activeTab === 'tour' && <LahoreTour />}
-          {activeTab === 'guide' && <TravelAssistant />}
-          {activeTab === 'privacy' && <PrivacyPolicy onBack={() => setActiveTab('home')} />}
+          </div>
+          <div hidden={activeTab !== 'phrases'}>
+            <AudioToVideo audioHistory={audioHistory} />
+          </div>
+          <div hidden={activeTab !== 'tour'}>
+            <LahoreTour />
+          </div>
+          <div hidden={activeTab !== 'guide'}>
+            <TravelAssistant />
+          </div>
+          <div hidden={activeTab !== 'privacy'}>
+            <PrivacyPolicy onBack={() => setActiveTab('home')} />
+          </div>
         </main>
 
         {activeTab !== 'privacy' && (
