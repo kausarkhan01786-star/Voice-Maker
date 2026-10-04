@@ -6,9 +6,10 @@ import type { GeneratedAudioHistoryItem } from '../utils/audioHistory';
 interface AudioHistoryProps {
   items: GeneratedAudioHistoryItem[];
   onClear: () => void;
+  onDelete: (id: string) => void;
 }
 
-export const AudioHistory: React.FC<AudioHistoryProps> = ({ items, onClear }) => (
+export const AudioHistory: React.FC<AudioHistoryProps> = ({ items, onClear, onDelete }) => (
   <div className="w-full max-w-lg mx-auto space-y-4 text-white pb-24">
     <header className="flex items-center justify-between gap-3 border-b border-purple-900/30 pb-3">
       <div>
@@ -41,10 +42,21 @@ export const AudioHistory: React.FC<AudioHistoryProps> = ({ items, onClear }) =>
         {items.map((item) => (
           <article key={item.id} className="space-y-2 border-b border-purple-900/30 pb-3">
             <div className="flex items-center justify-between gap-3 text-[11px] text-purple-300/60">
-              <span className="truncate">{item.voice}</span>
-              <time className="shrink-0" dateTime={new Date(item.createdAt).toISOString()}>
-                {new Date(item.createdAt).toLocaleString()}
-              </time>
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                <span className="truncate">{item.voice}</span>
+                <time className="shrink-0" dateTime={new Date(item.createdAt).toISOString()}>
+                  {new Date(item.createdAt).toLocaleString()}
+                </time>
+              </div>
+              <button
+                type="button"
+                onClick={() => onDelete(item.id)}
+                title={`Delete ${item.voice} audio`}
+                aria-label={`Delete ${item.voice} audio`}
+                className="shrink-0 rounded-lg p-1.5 text-purple-300/60 transition-colors hover:bg-red-500/10 hover:text-red-200"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
             <AudioPlayer
               audioBase64={item.base64}

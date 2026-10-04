@@ -52,6 +52,22 @@ export async function saveAudioHistoryItem(item: GeneratedAudioHistoryItem): Pro
   });
 }
 
+export async function deleteAudioHistoryItem(id: string): Promise<void> {
+  const database = await openHistoryDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, 'readwrite');
+    transaction.objectStore(STORE_NAME).delete(id);
+    transaction.oncomplete = () => {
+      database.close();
+      resolve();
+    };
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+  });
+}
+
 export async function clearAudioHistory(): Promise<void> {
   const database = await openHistoryDatabase();
   return new Promise((resolve, reject) => {

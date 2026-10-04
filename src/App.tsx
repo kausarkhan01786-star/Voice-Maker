@@ -16,6 +16,7 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { AudioHistory } from './components/AudioHistory';
 import {
   clearAudioHistory,
+  deleteAudioHistoryItem,
   getAudioHistory,
   saveAudioHistoryItem,
   type GeneratedAudioHistoryItem,
@@ -48,6 +49,13 @@ export default function App() {
     setAudioHistory([]);
     void clearAudioHistory().catch((error: unknown) => {
       console.error('Could not clear audio history:', error);
+    });
+  };
+
+  const handleDeleteAudio = (id: string) => {
+    setAudioHistory((items) => items.filter((item) => item.id !== id));
+    void deleteAudioHistoryItem(id).catch((error: unknown) => {
+      console.error('Could not delete audio history item:', error);
     });
   };
 
@@ -113,7 +121,7 @@ export default function App() {
             />
           )}
           {activeTab === 'history' && (
-            <AudioHistory items={audioHistory} onClear={handleClearHistory} />
+            <AudioHistory items={audioHistory} onClear={handleClearHistory} onDelete={handleDeleteAudio} />
           )}
           {activeTab === 'phrases' && <AudioToVideo audioHistory={audioHistory} />}
           {activeTab === 'tour' && <LahoreTour />}
