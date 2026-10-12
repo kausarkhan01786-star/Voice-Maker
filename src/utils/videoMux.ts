@@ -63,7 +63,7 @@ export async function compressAudioForAnalysis(audio: File): Promise<File> {
   const engine = await getFFmpeg();
   const audioExtension = audio.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'audio';
   const inputName = `analysis-source.${audioExtension}`;
-  const outputName = 'analysis-audio.aac';
+  const outputName = 'analysis-audio.mp3';
 
   try {
     await engine.writeFile(inputName, await fetchFile(audio));
@@ -72,9 +72,8 @@ export async function compressAudioForAnalysis(audio: File): Promise<File> {
       '-vn',
       '-ac', '1',
       '-ar', '22050',
-      '-c:a', 'aac',
+      '-c:a', 'libmp3lame',
       '-b:a', '24k',
-      '-f', 'adts',
       outputName,
     ]);
     const result = await engine.readFile(outputName);
@@ -83,7 +82,7 @@ export async function compressAudioForAnalysis(audio: File): Promise<File> {
       throw new Error('This audio is too long to analyze in one video request. Please trim it and try again.');
     }
     const outputBuffer = result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength) as ArrayBuffer;
-    return new File([outputBuffer], 'audio-analysis.aac', { type: 'audio/aac' });
+    return new File([outputBuffer], 'audio-analysis.mp3', { type: 'audio/mpeg' });
   } finally {
     await Promise.all([inputName, outputName].map((path) =>
       engine.deleteFile(path).catch(() => undefined)

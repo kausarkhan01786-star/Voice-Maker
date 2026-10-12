@@ -79,13 +79,19 @@ async function prepareImage(file: File): Promise<string> {
   if (file.size > 20 * 1024 * 1024) throw new Error('Choose an image smaller than 20 MB.');
 
   const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1024 / Math.max(bitmap.width, bitmap.height));
+  const width = 720;
+  const height = 1280;
+  const scale = Math.min(width / bitmap.width, height / bitmap.height);
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Could not prepare this image.');
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#000';
+  context.fillRect(0, 0, width, height);
+  const scaledWidth = Math.round(bitmap.width * scale);
+  const scaledHeight = Math.round(bitmap.height * scale);
+  context.drawImage(bitmap, (width - scaledWidth) / 2, (height - scaledHeight) / 2, scaledWidth, scaledHeight);
   bitmap.close();
 
   const resized = await new Promise<Blob>((resolve, reject) => {
@@ -128,24 +134,23 @@ export const AICopilot: React.FC = () => {
     if (!file) return;
     setError(null);
     if (file.type.startsWith('audio/')) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Audio must be 10 MB or smaller.');
+      if (file.size > 100 * 1024 * 1024) {
+        setError('Audio must be 100 MB or smaller.');
         return;
       }
-      setAttachedImage(null);
       setAttachedAudio(file);
       return;
     }
     try {
-      setAttachedAudio(null);
       setAttachedImage(await prepareImage(file));
     } catch (imageError: unknown) {
       setError(imageError instanceof Error ? imageError.message : 'Could not load this image.');
     }
   };
 
-  const handleGenerateVideo = async (prompt: string, uploadedAudio: File | null): Promise<ChatMessage> => {
+  const handleGenerateVideo = async (prompt: string, uploadedAudio: File | null, imageDataUrl: string | null): Promise<ChatMessage> => {
     let sourceAudio = uploadedAudio;
+    if (sourceAudio && sourceAudio.size > 10 * 1024 * 1024) throw new Error('Audio must be 10 MB or smaller for AI video generation. Add an image to create a video directly from your image and audio.');
     if (!sourceAudio) {
       setTaskStatus('Writing video narration...');
       const { response: scriptResponse, data: scriptData } = await postJson('/api/guide-ask', {
@@ -163,7 +168,8 @@ export const AICopilot: React.FC = () => {
     }
 
     if (sourceAudio.size > 10 * 1024 * 1024) throw new Error('Audio must be 10 MB or smaller.');
-    const analysisAudio = sourceAudio.size > 3 * 1024 * 1024
+    const transcriptionFormats = new Set(['audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/m4a', 'audio/ogg', 'audio/webm', 'audio/flac']);
+    const analysisAudio = sourceAudio.size > 3 * 1024 * 1024 || !transcriptionFormats.has(getGeminiAudioMimeType(sourceAudio))
       ? await compressAudioForAnalysis(sourceAudio)
       : sourceAudio;
 
@@ -174,6 +180,10 @@ export const AICopilot: React.FC = () => {
       mimeType: getGeminiAudioMimeType(analysisAudio) || 'audio/mpeg',
       visualDirection: prompt.slice(0, 500),
       aspectRatio: '9:16',
+      ...(imageDataUrl ? {
+        imageBase64: imageDataUrl.slice(imageDataUrl.indexOf(',') + 1),
+        imageMimeType: imageDataUrl.slice(5, imageDataUrl.indexOf(';')),
+      } : {}),
     });
     if (!startResponse.ok) throw new Error(startData.error || 'Could not start video generation.');
 
@@ -228,7 +238,7 @@ export const AICopilot: React.FC = () => {
     event?.preventDefault();
     const text = draft.trim();
     if ((!text && !attachedImage && !attachedAudio) || isLoading) return;
-    const wantsVideo = isVideoGenerationRequest(text) || (!text && Boolean(attachedAudio));
+    const wantsVideo = isVideoGenerationRequest(text) || Boolean(attachedAudio && (!text || attachedImage));
     const wantsImage = !wantsVideo && isImageGenerationRequest(text);
     if (attachedAudio && !wantsVideo && attachedAudio.size > 4 * 1024 * 1024) {
       setError('Audio must be 4 MB or smaller to transcribe.');
@@ -252,7 +262,7 @@ export const AICopilot: React.FC = () => {
 
     try {
       if (wantsVideo) {
-        const videoMessage = await handleGenerateVideo(text || userMessage.content, attachedAudio);
+        const videoMessage = await handleGenerateVideo(text || userMessage.content, attachedAudio, attachedImage);
         setMessages((current) => [...current, videoMessage]);
       } else if (wantsImage) {
         setTaskStatus('Creating image...');
@@ -509,22 +519,9 @@ export const AICopilot: React.FC = () => {
 
       <form onSubmit={handleSend} className="shrink-0 rounded-2xl border border-[#392269] bg-[#120B27] p-2 shadow-xl shadow-black/30 focus-within:border-[#8B5CF6]">
         {(attachedImage || attachedAudio) && (
-          <div className="relative mb-2 inline-flex">
-            {attachedImage
-              ? <img src={attachedImage} alt="Selected attachment" className="h-20 w-20 rounded-lg object-cover" />
-              : <div className="flex min-h-12 max-w-xs items-center gap-2 rounded-lg bg-[#1A1038] px-3 text-xs text-purple-100"><AudioLines className="h-4 w-4 shrink-0" /><span className="truncate">{attachedAudio?.name}</span></div>}
-            <button
-              type="button"
-              onClick={() => {
-                setAttachedImage(null);
-                setAttachedAudio(null);
-              }}
-              title="Remove attachment"
-              aria-label="Remove attachment"
-              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#35205E] text-white"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+          <div className="mb-2 flex flex-wrap gap-2">
+            {attachedImage && <div className="relative"><img src={attachedImage} alt="Selected image" className="h-20 w-20 rounded-lg object-cover" /><button type="button" onClick={() => setAttachedImage(null)} title="Remove image" aria-label="Remove image" className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#35205E] text-white"><X className="h-3.5 w-3.5" /></button></div>}
+            {attachedAudio && <div className="relative flex min-h-12 max-w-xs items-center gap-2 rounded-lg bg-[#1A1038] px-3 pr-9 text-xs text-purple-100"><AudioLines className="h-4 w-4 shrink-0" /><span className="truncate">{attachedAudio.name}</span><button type="button" onClick={() => setAttachedAudio(null)} title="Remove audio" aria-label="Remove audio" className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full text-white"><X className="h-3.5 w-3.5" /></button></div>}
           </div>
         )}
         <textarea

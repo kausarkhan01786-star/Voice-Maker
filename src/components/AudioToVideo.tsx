@@ -156,7 +156,8 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
 
     try {
       setStatus(selectedFile.size > 3 * 1024 * 1024 ? 'Preparing audio for analysis' : 'Analyzing audio and planning scenes');
-      const analysisFile = selectedFile.size > 3 * 1024 * 1024
+      const transcriptionFormats = new Set(['audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/m4a', 'audio/ogg', 'audio/webm', 'audio/flac']);
+      const analysisFile = selectedFile.size > 3 * 1024 * 1024 || !transcriptionFormats.has(getGeminiAudioMimeType(selectedFile))
         ? await compressAudioForAnalysis(selectedFile)
         : selectedFile;
       setStatus('Analyzing audio and planning scenes');

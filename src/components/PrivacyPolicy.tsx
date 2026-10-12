@@ -12,7 +12,7 @@ const policySections = [
       'When you use speech generation, the text, selected voice, and style instructions you submit are sent to Google Gemini to create audio. When you use AI music generation, your music description is sent to Google Gemini to create a music clip.',
       'Text and attached images submitted to the AI Copilot are sent to OpenAI for conversation and image analysis. Image prompts are sent to OpenAI to create images. Voice recordings are sent to OpenAI for transcription, and response text is sent to OpenAI to create spoken replies.',
       'Audio files you choose with the Background Music upload control are processed in your browser to preview and mix with generated speech. The app does not upload those selected files to its server.',
-      'When you use Audio to Video, the audio you select is sent through the VoiceMack server to Google Gemini for analysis and video generation. The generated video is returned to your browser, where the selected original audio is added before preview or download.',
+      'When you use Audio to Video, your selected audio is sent through the VoiceMack server to OpenAI for transcription and Sora video generation. If you attach an image in AI Copilot, it is sent as a visual reference for the generated video. The generated video is returned to your browser, where the selected original audio is added before preview or download.',
     ],
   },
   {
@@ -25,7 +25,7 @@ const policySections = [
   {
     title: 'Service providers',
     paragraphs: [
-      'Voice generation, AI music generation, and audio-to-video generation rely on Google Gemini APIs. AI Copilot chat, image analysis and generation, transcription, and spoken replies rely on OpenAI APIs. The website is hosted by Netlify. These providers may process technical request data under their own terms and privacy policies. Review Google’s, OpenAI’s, and Netlify’s current policies for details about their handling and retention practices.',
+      'Voice generation and AI music generation rely on Google Gemini APIs. AI Copilot chat, image analysis and generation, audio transcription, spoken replies, and Sora video generation rely on OpenAI APIs. The website is hosted by Netlify. These providers may process technical request data under their own terms and privacy policies. Review Google’s, OpenAI’s, and Netlify’s current policies for details about their handling and retention practices.',
     ],
   },
   {

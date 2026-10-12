@@ -19,16 +19,15 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
 - React 19, TypeScript, and Vite
 - Express server for local development and API routing
 - Netlify Functions for deployed API endpoints
-- Google Gemini APIs for speech, music, and video workflows
-- OpenAI APIs for Copilot chat, image analysis and generation, transcription, narration, and speech
-- Gemini API for audio-driven video generation
+- Google Gemini APIs for speech and music workflows
+- OpenAI APIs for Copilot chat, image analysis and generation, transcription, narration, speech, and Sora video generation
 - IndexedDB for local audio and video history
 
 ## Requirements
 
 - Node.js and npm
-- A Google Gemini API key for speech, music, and video features
-- An OpenAI API key for the AI Copilot
+- A Google Gemini API key for speech and music features
+- An OpenAI API key for Copilot and video generation; Sora access and API billing must be enabled for the OpenAI project
 
 ## Getting Started
 
@@ -43,6 +42,8 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
    ```env
    GEMINI_API_KEY=your_gemini_api_key
    OPENAI_API_KEY=your_openai_api_key
+   # Optional; defaults to sora-2
+   OPENAI_VIDEO_MODEL=sora-2
    ```
 
    The Copilot key must stay on the server. If a key has been shared publicly or in a chat, revoke it and create a replacement before adding it to `.env`.
@@ -68,7 +69,7 @@ Never commit your `.env` file or expose your API key in client-side code.
 
 ## Deploying to Netlify
 
-Connect the repository to Netlify. The included `netlify.toml` configures the build command, publish directory, functions directory, and API redirects. Add `GEMINI_API_KEY` and `OPENAI_API_KEY` in the site's environment variables for all AI features.
+Connect the repository to Netlify. The included `netlify.toml` configures the build command, publish directory, functions directory, and API redirects. Add `GEMINI_API_KEY` and `OPENAI_API_KEY` in the site's environment variables for all AI features. Sora video generation uses the OpenAI API and requires Sora access and billing on that API project.
 
 ## Privacy
 
