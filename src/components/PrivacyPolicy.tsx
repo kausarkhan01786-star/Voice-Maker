@@ -55,7 +55,7 @@ const policySections = [
 ];
 
 export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => (
-  <article className="w-full max-w-2xl mx-auto pb-28 text-[#F1F0F5]">
+  <article className="w-full max-w-3xl mx-auto pb-28 text-[#F1F0F5]">
     <button
       type="button"
       onClick={onBack}

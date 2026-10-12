@@ -227,7 +227,7 @@ export const AudioToVideo: React.FC<AudioToVideoProps> = ({ audioHistory }) => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto space-y-5 pb-24 text-white">
+    <div className="w-full max-w-3xl mx-auto space-y-5 pb-24 text-white">
     <section className="space-y-4 border-b border-purple-900/40 pb-5">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-300">

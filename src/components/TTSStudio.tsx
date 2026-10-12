@@ -292,7 +292,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto space-y-5 text-white pb-24">
+    <div className="w-full max-w-3xl mx-auto space-y-5 text-white pb-24">
       {/* App Header: Waveform Logo + VoiceMack + Settings Icon */}
       <div className="flex items-center justify-between pt-1 pb-2">
         <div className="flex items-center gap-2.5">

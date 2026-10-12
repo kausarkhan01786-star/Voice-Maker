@@ -66,7 +66,7 @@ export default function App() {
       <div className="fixed bottom-1/4 left-1/4 w-96 h-96 bg-indigo-950/30 rounded-full blur-[140px] pointer-events-none -z-10" />
 
       {/* Main Container: Mobile phone viewport baseline or responsive desktop */}
-      <div className={`w-full ${activeTab === 'guide' ? 'max-w-5xl' : 'max-w-md md:max-w-lg'} min-h-screen flex flex-col relative px-4 sm:px-5`}>
+      <div className="w-full max-w-5xl min-h-screen flex flex-col relative px-4 sm:px-5">
         {/* Desktop View Navigation Pill Tabs */}
         <div className="hidden sm:flex items-center justify-center gap-1 my-2 p-1 bg-[#130C28] rounded-2xl border border-purple-900/40 text-xs">
           <button

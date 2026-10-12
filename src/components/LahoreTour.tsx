@@ -81,7 +81,7 @@ export const LahoreTour: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto space-y-4 text-white pb-24">
+    <div className="w-full max-w-3xl mx-auto space-y-4 text-white pb-24">
       {/* Banner */}
       <div className="bg-[#120B27] rounded-2xl p-4 border border-[#2B1A52] shadow-lg">
         <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 mb-1">
