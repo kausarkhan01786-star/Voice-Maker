@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { handler as audioToVideoHandler } from './netlify/functions/audio-to-video';
+import { handler as guideAskHandler } from './netlify/functions/guide-ask';
 
 dotenv.config();
 
@@ -179,42 +180,12 @@ app.post('/api/tts', async (req, res) => {
   }
 });
 
-// AI Voice & Speech Assistant endpoint powered by gemini-3.8-flash
 app.post('/api/guide-ask', async (req, res) => {
-  if (!ai) {
-    return res.status(503).json({ error: 'Gemini API is not configured. Set GEMINI_API_KEY in a local .env file.' });
-  }
-
-  try {
-    const { question, userContext = 'A user exploring voice synthesis, voiceovers, podcasts, and speech generation' } = req.body;
-
-    if (!question || typeof question !== 'string') {
-      return res.status(400).json({ error: 'Question is required.' });
-    }
-
-    const prompt = `You are an expert Voice Studio Copilot and AI speech assistant for VoiceMack (powered by Gemini 3.8 Flash TTS).
-
-Context: ${userContext}
-User's Question/Request: "${question}"
-
-Provide an articulate, helpful, and concise response in English (under 150 words) suitable for reading aloud via Text-to-Speech:
-1. Direct, engaging answer or voiceover script.
-2. Practical voice delivery tips (pacing, tone, where to pause, recommended emotion).
-3. If writing a script, include natural punctuation and optional voice bursts like |mhm|, |yeah|, <laugh>, or <breath> to highlight Gemini 3.8 Flash TTS capabilities.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-    });
-
-    const text = response.text || '';
-    res.json({ answer: text });
-  } catch (error: any) {
-    console.error('Error getting assistant response from gemini-3.8-flash:', error);
-    res.status(500).json({
-      error: error.message || 'Failed to get voice assistant response',
-    });
-  }
+  const result = await guideAskHandler({
+    httpMethod: req.method,
+    body: JSON.stringify(req.body),
+  });
+  res.status(result.statusCode).set(result.headers).send(result.body);
 });
 
 app.post('/api/music', async (req, res) => {

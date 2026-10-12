@@ -11,7 +11,7 @@ import {
 import { TTSStudio } from './components/TTSStudio';
 import { AudioToVideo } from './components/AudioToVideo';
 import { LahoreTour } from './components/LahoreTour';
-import { TravelAssistant } from './components/TravelAssistant';
+import { AICopilot } from './components/AICopilot';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { AudioHistory } from './components/AudioHistory';
 import {
@@ -66,48 +66,48 @@ export default function App() {
       <div className="fixed bottom-1/4 left-1/4 w-96 h-96 bg-indigo-950/30 rounded-full blur-[140px] pointer-events-none -z-10" />
 
       {/* Main Container: Mobile phone viewport baseline or responsive desktop */}
-      <div className="w-full max-w-md md:max-w-lg min-h-screen flex flex-col relative px-4 sm:px-5">
+      <div className={`w-full ${activeTab === 'guide' ? 'max-w-5xl' : 'max-w-md md:max-w-lg'} min-h-screen flex flex-col relative px-4 sm:px-5`}>
         {/* Desktop View Navigation Pill Tabs */}
         <div className="hidden sm:flex items-center justify-center gap-1 my-2 p-1 bg-[#130C28] rounded-2xl border border-purple-900/40 text-xs">
           <button
             onClick={() => setActiveTab('home')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
               activeTab === 'home'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
                 : 'text-purple-300/70 hover:text-white'
             }`}
           >
-            🎙️ TTS Studio
+            <><Mic className="h-3.5 w-3.5" /> TTS Studio</>
           </button>
           <button
             onClick={() => setActiveTab('phrases')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
               activeTab === 'phrases'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
                 : 'text-purple-300/70 hover:text-white'
             }`}
           >
-            🎬 Audio to Video
+            <><Video className="h-3.5 w-3.5" /> Audio to Video</>
           </button>
           <button
             onClick={() => setActiveTab('tour')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
               activeTab === 'tour'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
                 : 'text-purple-300/70 hover:text-white'
             }`}
           >
-            ✨ Voice Showcase
+            <><Sparkles className="h-3.5 w-3.5" /> Voice Showcase</>
           </button>
           <button
             onClick={() => setActiveTab('guide')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all ${
               activeTab === 'guide'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
                 : 'text-purple-300/70 hover:text-white'
             }`}
           >
-            🤖 AI Copilot
+            <><Bot className="h-3.5 w-3.5" /> AI Copilot</>
           </button>
         </div>
 
@@ -130,7 +130,7 @@ export default function App() {
             <LahoreTour />
           </div>
           <div hidden={activeTab !== 'guide'}>
-            <TravelAssistant />
+            <AICopilot />
           </div>
           <div hidden={activeTab !== 'privacy'}>
             <PrivacyPolicy onBack={() => setActiveTab('home')} />

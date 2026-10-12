@@ -9,7 +9,9 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
 - Generate or upload background music, mix it with speech, and preview the result.
 - Turn uploaded or generated audio into a video, choose an aspect ratio, and download the MP4.
 - Keep generated speech and video in local history.
-- Explore the Lahore voice showcase and use the AI travel assistant.
+- Chat with the AI Copilot in multiple languages and attach images for analysis.
+- Generate images, transcribe voice messages, and listen to spoken responses.
+- Explore the Lahore voice showcase.
 - Use browser speech as a fallback when AI speech generation is unavailable.
 
 ## Tech Stack
@@ -17,13 +19,15 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
 - React 19, TypeScript, and Vite
 - Express server for local development and API routing
 - Netlify Functions for deployed API endpoints
-- Google Gemini APIs for speech, music, assistant, and video workflows
+- Google Gemini APIs for speech, music, and video workflows
+- OpenAI APIs for Copilot chat, image analysis and generation, transcription, and speech
 - IndexedDB for local audio and video history
 
 ## Requirements
 
 - Node.js and npm
-- A Google Gemini API key for AI-powered features
+- A Google Gemini API key for speech, music, and video features
+- An OpenAI API key for the AI Copilot
 
 ## Getting Started
 
@@ -33,11 +37,14 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
    npm install
    ```
 
-2. Create a `.env` file in the project root and add your Gemini API key:
+2. Create a `.env` file in the project root and add your API keys:
 
    ```env
    GEMINI_API_KEY=your_gemini_api_key
+   OPENAI_API_KEY=your_openai_api_key
    ```
+
+   The Copilot key must stay on the server. If a key has been shared publicly or in a chat, revoke it and create a replacement before adding it to `.env`.
 
 3. Start the local development server:
 
@@ -60,7 +67,7 @@ Never commit your `.env` file or expose your API key in client-side code.
 
 ## Deploying to Netlify
 
-Connect the repository to Netlify. The included `netlify.toml` configures the build command, publish directory, functions directory, and API redirects. Add `GEMINI_API_KEY` in the site's environment variables before deploying AI-powered features.
+Connect the repository to Netlify. The included `netlify.toml` configures the build command, publish directory, functions directory, and API redirects. Add `GEMINI_API_KEY` and `OPENAI_API_KEY` in the site's environment variables for all AI features.
 
 ## Privacy
 

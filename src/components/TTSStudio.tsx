@@ -14,6 +14,7 @@ import {
   Music2,
   Upload,
   X,
+  Star,
 } from 'lucide-react';
 import { VOICE_PROFILES, STYLE_PRESETS, QUICK_PROMPTS } from '../data/lahoreData';
 import microphoneImage from '../assets/images/microphone_glow_violet_1790654219590.jpg';
@@ -231,7 +232,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     } catch (err: any) {
       console.error('TTS Generation error:', err);
       setErrorMsg(
-        err.message || 'Unable to generate audio with Gemini 3.8 Flash TTS.'
+        err.message || 'Unable to generate audio. Please try again.'
       );
     } finally {
       setIsGenerating(false);
@@ -485,7 +486,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
       {/* Voice Style Presets Section (2x2 Grid) matching mockup */}
       <div className="space-y-2.5">
         <div className="flex items-center gap-1.5 text-sm font-bold text-white px-1">
-          <span className="text-amber-400">★</span>
+          <Star className="h-3.5 w-3.5 fill-amber-400/20 text-amber-400" />
           <span>Voice Style Presets</span>
         </div>
 
@@ -732,11 +733,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
               </button>
             </div>
             <p className="text-xs text-purple-200/80 leading-relaxed">
-              Powered directly by Google’s flagship{' '}
-              <span className="text-purple-300 font-mono font-bold">
-                gemini-3.8-flash-tts
-              </span>{' '}
-              engine, providing studio-grade 24kHz Unary WAV output with expressive voice design.
+              Powered by Kausar Mia, VoiceMack turns your text into expressive speech with a choice of natural-sounding voices.
             </p>
             <div className="text-xs text-purple-300/70 space-y-1.5 bg-[#1B113B] p-3 rounded-xl border border-purple-800/40">
               <div>• <strong>Kore:</strong> Calm, warm and soothing female persona</div>

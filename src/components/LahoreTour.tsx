@@ -92,7 +92,7 @@ export const LahoreTour: React.FC = () => {
           Voice Showcase & Story Demos
         </h2>
         <p className="text-xs text-purple-200/70 mt-1">
-          Experience how expressive Gemini 3.8 Flash TTS sounds in documentary, audiobook, keynote, and podcast environments.
+          Explore expressive voice demos across documentary, audiobook, keynote, and podcast styles, powered by Kausar Mia.
         </p>
       </div>
 

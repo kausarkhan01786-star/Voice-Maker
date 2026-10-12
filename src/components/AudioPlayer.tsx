@@ -235,7 +235,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
 
           <span className="text-[10px] text-purple-400/60 font-mono">
-            Gemini 3.8 Flash TTS • 24kHz
+            Powered by Kausar Mia
           </span>
         </div>
       )}

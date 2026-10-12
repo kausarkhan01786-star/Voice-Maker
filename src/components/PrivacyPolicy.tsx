@@ -9,7 +9,8 @@ const policySections = [
   {
     title: 'Information you provide',
     paragraphs: [
-      'When you use speech generation, the text, selected voice, and style instructions you submit are sent to Google Gemini to create audio. When you use AI music generation, your music description is sent to Google Gemini to create a music clip. Questions submitted to the AI Assistant are also sent to Google Gemini so it can prepare a response.',
+      'When you use speech generation, the text, selected voice, and style instructions you submit are sent to Google Gemini to create audio. When you use AI music generation, your music description is sent to Google Gemini to create a music clip.',
+      'Text and attached images submitted to the AI Copilot are sent to OpenAI for conversation and image analysis. Image prompts are sent to OpenAI to create images. Voice recordings are sent to OpenAI for transcription, and response text is sent to OpenAI to create spoken replies.',
       'Audio files you choose with the Background Music upload control are processed in your browser to preview and mix with generated speech. The app does not upload those selected files to its server.',
       'When you use Audio to Video, the audio you select is sent through the VoiceMack server to Google Gemini for analysis and video generation. The generated video is returned to your browser, where the selected original audio is added before preview or download.',
     ],
@@ -24,13 +25,13 @@ const policySections = [
   {
     title: 'Service providers',
     paragraphs: [
-      'Voice generation, AI music generation, assistant responses, and audio-to-video generation rely on Google Gemini APIs. The website is hosted by Netlify. Those providers may process technical request data under their own terms and privacy policies. Review Google’s and Netlify’s current policies for details about their handling and retention practices.',
+      'Voice generation, AI music generation, and audio-to-video generation rely on Google Gemini APIs. AI Copilot chat, image analysis and generation, transcription, and spoken replies rely on OpenAI APIs. The website is hosted by Netlify. These providers may process technical request data under their own terms and privacy policies. Review Google’s, OpenAI’s, and Netlify’s current policies for details about their handling and retention practices.',
     ],
   },
   {
     title: 'API keys and security',
     paragraphs: [
-      'The Gemini API key is configured on the server as an environment variable and is not intended to be exposed in the browser. Do not place API keys in public source files or share them. No internet service can guarantee absolute security, so only use the app with information you are comfortable sending to its providers.',
+      'Gemini and OpenAI API keys are configured on the server as environment variables and are not intended to be exposed in the browser. Do not place API keys in public source files or share them. No internet service can guarantee absolute security, so only use the app with information you are comfortable sending to its providers.',
     ],
   },
   {
@@ -70,7 +71,7 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => (
         VoiceMack · Legal
       </div>
       <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl">Privacy Policy</h1>
-      <p className="mt-3 text-sm text-purple-200/70">Last updated: October 4, 2026</p>
+      <p className="mt-3 text-sm text-purple-200/70">Last updated: October 12, 2026</p>
       <p className="mt-5 max-w-xl text-sm leading-6 text-purple-100/85">
         This page explains what happens to information when you use VoiceMack’s speech, music, video, and AI assistant features.
       </p>
