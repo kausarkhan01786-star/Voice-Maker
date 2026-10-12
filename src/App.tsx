@@ -22,9 +22,32 @@ import {
   type GeneratedAudioHistoryItem,
 } from './utils/audioHistory';
 
+type AppTab = 'home' | 'history' | 'phrases' | 'tour' | 'guide' | 'privacy';
+
+const ACTIVE_TAB_KEY = 'voicemack-active-tab';
+const APP_TABS: AppTab[] = ['home', 'history', 'phrases', 'tour', 'guide', 'privacy'];
+
+function getSavedTab(): AppTab {
+  try {
+    const savedTab = sessionStorage.getItem(ACTIVE_TAB_KEY);
+    if (savedTab && APP_TABS.includes(savedTab as AppTab)) return savedTab as AppTab;
+  } catch {
+    // Keep the app usable when browser storage is unavailable.
+  }
+  return 'home';
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'phrases' | 'tour' | 'guide' | 'privacy'>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>(getSavedTab);
   const [audioHistory, setAudioHistory] = useState<GeneratedAudioHistoryItem[]>([]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab);
+    } catch {
+      // Tab persistence is best-effort.
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +135,7 @@ export default function App() {
         </div>
 
         {/* Main Tab Content */}
-        <main className="flex-1 w-full pt-1">
+        <main className={`w-full pt-1 ${activeTab === 'guide' ? 'flex h-[calc(100dvh-8rem)] min-h-0 flex-col sm:h-[calc(100dvh-10rem)]' : 'flex-1'}`}>
           <div hidden={activeTab !== 'home'}>
             <TTSStudio
               initialText="Welcome to VoiceMack! Experience the next generation of realistic speech synthesis."
@@ -129,7 +152,7 @@ export default function App() {
           <div hidden={activeTab !== 'tour'}>
             <LahoreTour />
           </div>
-          <div hidden={activeTab !== 'guide'}>
+          <div className="h-full min-h-0" hidden={activeTab !== 'guide'}>
             <AICopilot />
           </div>
           <div hidden={activeTab !== 'privacy'}>
@@ -137,7 +160,7 @@ export default function App() {
           </div>
         </main>
 
-        {activeTab !== 'privacy' && (
+        {activeTab !== 'privacy' && activeTab !== 'guide' && (
           <footer className="w-full pb-24 pt-5 text-center">
             <button
               type="button"

@@ -166,6 +166,33 @@ async function handleSpeech(body: Record<string, any>, apiKey: string): Promise<
   return jsonResponse(200, { audioBase64, mimeType: 'audio/mpeg' });
 }
 
+async function handleVideoScript(body: Record<string, any>, apiKey: string): Promise<NetlifyResponse> {
+  if (typeof body.prompt !== 'string' || !body.prompt.trim()) {
+    return jsonResponse(400, { error: 'Describe the video you want to create.' });
+  }
+  if (body.prompt.length > 4000) {
+    return jsonResponse(400, { error: 'Video prompts must be 4,000 characters or shorter.' });
+  }
+
+  const response = await openAIRequest('chat/completions', apiKey, jsonRequest({
+    model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content: 'Write a vivid, concise voiceover script for a short video based on the user request. Reply in the same language as the request. Return only the narration, with natural spoken phrasing and no production notes.',
+      },
+      { role: 'user', content: body.prompt.trim() },
+    ],
+    max_completion_tokens: 400,
+  }));
+  const data = await readOpenAIResponse(response);
+  const script = data.choices?.[0]?.message?.content;
+  if (typeof script !== 'string' || !script.trim()) {
+    return jsonResponse(502, { error: 'OpenAI returned an empty narration script.' });
+  }
+  return jsonResponse(200, { script });
+}
+
 export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed.' });
@@ -186,6 +213,8 @@ export async function handler(event: NetlifyEvent): Promise<NetlifyResponse> {
         return await handleTranscription(body, apiKey);
       case 'speak':
         return await handleSpeech(body, apiKey);
+      case 'video-script':
+        return await handleVideoScript(body, apiKey);
       default:
         return jsonResponse(400, { error: 'Unknown Copilot action.' });
     }

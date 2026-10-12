@@ -9,8 +9,8 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
 - Generate or upload background music, mix it with speech, and preview the result.
 - Turn uploaded or generated audio into a video, choose an aspect ratio, and download the MP4.
 - Keep generated speech and video in local history.
-- Chat with the AI Copilot in multiple languages and attach images for analysis.
-- Generate images, transcribe voice messages, and listen to spoken responses.
+- Use one AI Copilot chat for multilingual conversation, image analysis and generation, voice input, and spoken replies.
+- Generate narrated videos from a text prompt or create a video from an attached audio clip directly in chat.
 - Explore the Lahore voice showcase.
 - Use browser speech as a fallback when AI speech generation is unavailable.
 
@@ -20,7 +20,8 @@ VoiceMack is an AI-powered voice studio for turning text into speech and creatin
 - Express server for local development and API routing
 - Netlify Functions for deployed API endpoints
 - Google Gemini APIs for speech, music, and video workflows
-- OpenAI APIs for Copilot chat, image analysis and generation, transcription, and speech
+- OpenAI APIs for Copilot chat, image analysis and generation, transcription, narration, and speech
+- Gemini API for audio-driven video generation
 - IndexedDB for local audio and video history
 
 ## Requirements
