@@ -374,6 +374,19 @@ export const AICopilot: React.FC = () => {
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onPaste={(event) => {
+            if (mode !== 'chat') return;
+            const imageItem = Array.from(event.clipboardData.items).find(
+              (item) => item.kind === 'file' && item.type.startsWith('image/')
+            );
+            const imageFile = imageItem?.getAsFile();
+            if (!imageFile) return;
+
+            event.preventDefault();
+            const pastedText = event.clipboardData.getData('text/plain');
+            if (pastedText) setDraft((current) => `${current}${pastedText}`);
+            void handleImageSelection(imageFile);
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
@@ -381,7 +394,7 @@ export const AICopilot: React.FC = () => {
             }
           }}
           rows={2}
-          placeholder={mode === 'image' ? 'Describe an image to create...' : 'Message AI Copilot...'}
+          placeholder={mode === 'image' ? 'Describe an image to create...' : 'Message or paste an image...'}
           aria-label={mode === 'image' ? 'Image description' : 'Message AI Copilot'}
           className="max-h-40 min-h-12 w-full resize-y bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-purple-300/40"
         />
